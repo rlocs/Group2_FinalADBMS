@@ -23,6 +23,109 @@ SET time_zone = "+00:00";
 
 -- --------------------------------------------------------
 
+DELIMITER $$
+
+CREATE PROCEDURE GetPatientHistory(IN patientID INT)
+BEGIN
+    -- Appointments
+    SELECT * FROM appointments WHERE patient_id = patientID;
+
+    -- Consultations
+    SELECT c.* 
+    FROM consultations c
+    JOIN appointments a ON c.appointment_id = a.appointment_id
+    WHERE a.patient_id = patientID;
+
+    -- Health Metrics
+    SELECT * FROM healthmetrics WHERE patient_id = patientID;
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE PROCEDURE ScheduleAppointment(
+    IN p_patient_id INT,
+    IN p_worker_id INT,
+    IN p_date DATETIME,
+    IN p_purpose TEXT
+)
+BEGIN
+    INSERT INTO appointments (patient_id, worker_id, appointment_date, purpose, status)
+    VALUES (p_patient_id, p_worker_id, p_date, p_purpose, 'Scheduled');
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE PROCEDURE CountPatientsByBarangay()
+BEGIN
+    SELECT h.barangay, COUNT(p.patient_id) AS total_patients
+    FROM patients p
+    JOIN households h ON p.household_id = h.household_id
+    GROUP BY h.barangay;
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE PROCEDURE AddHealthMetric(
+    IN p_patient_id INT,
+    IN p_date DATE,
+    IN p_blood_pressure VARCHAR(10),
+    IN p_weight DECIMAL(5,2),
+    IN p_temperature DECIMAL(4,1),
+    IN p_notes TEXT
+)
+BEGIN
+    INSERT INTO healthmetrics (patient_id, checkup_date, blood_pressure, weight, temperature, notes)
+    VALUES (p_patient_id, p_date, p_blood_pressure, p_weight, p_temperature, p_notes);
+END$$
+
+DELIMITER ;
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('Healthworker','Nurse','Doctor') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `username`, `password`, `role`) VALUES
+(1, 'health1', '$2y$10$4dO9Su1JzTqZ1iy/2ZAj8OdxwJNoZKmzyVufWkjQLuKdMfdp/CJle', 'Healthworker'), -- password: healthpass
+(2, 'nurse1', '$2y$10$e0j7gE3TzN1K4Z9dJkZ5qeZ2QjOVFq/yQOXYpYvFxdKLFg.ZWTRBO', 'Nurse'),         -- password: nursepass
+(3, 'doctor1', '$2y$10$3zJ4vBGRqFydvIXMoNw/ROFvBnN2e1mF4zNHRQOHqTDnqLaXDxIh6', 'Doctor');        -- password: doctorpass
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`);
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+ /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+ /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
 --
 -- Table structure for table `appointments`
 --
