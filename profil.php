@@ -205,6 +205,55 @@
 </head>
 <body>
 
+ <!-- Create Staff Modal -->
+ <div id="createStaffModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Create New Staff Account</h2>
+        <button onclick="closeCreateModal()">&times;</button>
+      </div>
+      <form action="create_staff.php" method="POST">
+        <label for="staff-nic">NIC Number</label>
+        <input type="text" id="staff-nic" name="staff_nic" required>
+  
+        <label for="staff-email">Gmail</label>
+        <input type="email" id="staff-email" name="staff_email" required>
+  
+        <label for="staff-gender">Gender</label>
+        <select id="staff-gender" name="staff_gender" required>
+          <option value="">Select gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+  
+        <label for="staff-dob">Date of Birth</label>
+        <input type="text" id="staff-dob" name="staff_dob" placeholder="MM/DD/YYYY" required>
+  
+        <label for="staff-address">Address</label>
+        <textarea id="staff-address" name="staff_address" rows="3" required></textarea>
+  
+        <label for="staff-type">User Type</label>
+        <select id="staff-type" name="staff_type" required>
+          <option value="">Choose user type</option>
+          <option value="Doctor">Doctor</option>
+          <option value="Nurse">Nurse</option>
+          <option value="Admin">Admin</option>
+        </select>
+  
+        <label for="staff-username">Username</label>
+        <input type="text" id="staff-username" name="staff_username" required>
+  
+        <div class="modal-footer">
+          <button type="button" onclick="closeCreateModal()">Cancel</button>
+          <button type="submit">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+
+
   <div class="nav-buttons">
     <button class="btn-back">Back</button>
   </div>
