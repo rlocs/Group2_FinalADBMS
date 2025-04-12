@@ -205,52 +205,48 @@
 </head>
 <body>
 
- <!-- Create Staff Modal -->
- <div id="createStaffModal" class="modal">
-    <div class="modal-content">
+<!-- Modal for Creating New Staff Account -->
+<div class="modal fade" id="createAccountModal" tabindex="-1" aria-labelledby="createAccountModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" class="modal-content">
       <div class="modal-header">
-        <h2>Create New Staff Account</h2>
-        <button onclick="closeCreateModal()">&times;</button>
+        <h5 class="modal-title">Create New Staff Account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="create_staff.php" method="POST">
-        <label for="staff-nic">NIC Number</label>
-        <input type="text" id="staff-nic" name="staff_nic" required>
-  
-        <label for="staff-email">Gmail</label>
-        <input type="email" id="staff-email" name="staff_email" required>
-  
-        <label for="staff-gender">Gender</label>
-        <select id="staff-gender" name="staff_gender" required>
-          <option value="">Select gender</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
-        </select>
-  
-        <label for="staff-dob">Date of Birth</label>
-        <input type="text" id="staff-dob" name="staff_dob" placeholder="MM/DD/YYYY" required>
-  
-        <label for="staff-address">Address</label>
-        <textarea id="staff-address" name="staff_address" rows="3" required></textarea>
-  
-        <label for="staff-type">User Type</label>
-        <select id="staff-type" name="staff_type" required>
-          <option value="">Choose user type</option>
-          <option value="Doctor">Doctor</option>
-          <option value="Nurse">Nurse</option>
-          <option value="Admin">Admin</option>
-        </select>
-  
-        <label for="staff-username">Username</label>
-        <input type="text" id="staff-username" name="staff_username" required>
-  
-        <div class="modal-footer">
-          <button type="button" onclick="closeCreateModal()">Cancel</button>
-          <button type="submit">Create</button>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Full Name</label><input type="text" name="name" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">NIC Number</label><input type="text" name="nic" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">Gmail</label><input type="email" name="email" class="form-control" required></div>
+        <div class="mb-3">
+          <label class="form-label">Gender</label>
+          <select name="gender" class="form-control" required>
+            <option value="" disabled selected>Select gender</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
         </div>
-      </form>
-    </div>
+        <div class="mb-3"><label class="form-label">Date of Birth</label><input type="date" name="dob" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">Address</label><textarea name="address" class="form-control" rows="2" required></textarea></div>
+        <div class="mb-3">
+          <label class="form-label">User Type</label>
+          <select name="usertype" class="form-control" required>
+            <option value="" disabled selected>Choose user type</option>
+            <option value="Healthworker">Healthworker</option>
+            <option value="Nurse">Nurse</option>
+            <option value="Doctor">Doctor</option>
+          </select>
+        </div>
+        <div class="mb-3"><label class="form-label">Username</label><input type="text" name="username" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">Password</label><input type="password" name="password" class="form-control" required></div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" name="create_account" class="btn btn-primary">Create Account</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </form>
   </div>
+</div>
   
 
 
@@ -285,7 +281,7 @@
 
       <!-- Create section -->
       <div class="create-section">
-        <a href="#" class="create-link">Create Acc for the Staff</a>
+        <a href="profile.php" class="create-link">Create Acc for the Staff</a>
         <button type="submit" class="btn-create">Create</button>
       </div>
     </div>

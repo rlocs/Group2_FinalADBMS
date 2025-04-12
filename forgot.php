@@ -127,7 +127,7 @@
         </div>
         <div class="square">
             <div class="login-title">Forgot Password</div>
-            <form action="login.php" method="POST">
+            <form action="b-login.php" method="POST">
                 <div class="form-group">
                     <i class='bx bxs-user'></i>
                     <input type="text" class="form-control" name="username" id="username" placeholder="E-mail Address" required>
@@ -143,7 +143,7 @@
                     minlength = "8" maxlength="16" placeholder="Confirm Password" required>
                 </div>
                 <div class="forgot-password">
-                    <a href="index.php">Back to Login</a>
+                    <a href="login.php">Back to Login</a>
                 </div>
                 <button type="submit" class="btn-login">Confirm</button>
             </form>

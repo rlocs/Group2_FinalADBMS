@@ -18,10 +18,12 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `dbhealth`
+-- Database: `db_healthcenter`
 --
 
 -- --------------------------------------------------------
+CREATE DATABASE IF NOT EXISTS `db_healthcenter`;
+USE `db_healthcenter`;
 
 DELIMITER $$
 
@@ -102,9 +104,9 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `role`) VALUES
-(1, 'health1', '$2y$10$4dO9Su1JzTqZ1iy/2ZAj8OdxwJNoZKmzyVufWkjQLuKdMfdp/CJle', 'Healthworker'), -- password: healthpass
-(2, 'nurse1', '$2y$10$e0j7gE3TzN1K4Z9dJkZ5qeZ2QjOVFq/yQOXYpYvFxdKLFg.ZWTRBO', 'Nurse'),         -- password: nursepass
-(3, 'doctor1', '$2y$10$3zJ4vBGRqFydvIXMoNw/ROFvBnN2e1mF4zNHRQOHqTDnqLaXDxIh6', 'Doctor');        -- password: doctorpass
+(1, 'health1', '$2y$10$VI1pS8PxAd00oDHBVrs0kO77IdW04fvietHSCwgKfXt/2oHyBA8aC', 'Healthworker'), -- password: healthpass
+(2, 'nurse1', '$2y$10$iR8crVFYoghjgkOB4mW7Qe8KihmhCPSO1c3mUe/c0T.bN4VCYRkIy', 'Nurse'),         -- password: nursepass
+(3, 'doctor1', '$2y$10$x4PLjpI/uPnEG2nW/kkkuu0c3wBZwJy9kgoWrJ2fef/TjDDczM/Bm', 'Doctor');        -- password: doctorpass
 
 --
 -- Indexes for table `users`
