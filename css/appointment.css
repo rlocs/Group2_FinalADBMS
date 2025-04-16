@@ -1,0 +1,217 @@
+
+body {
+    background-color: #ffffff;
+}
+.navbar-custom {
+    background-color: #ffffff;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+.navbar-nav .nav-link {
+    color: black !important;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-top: 10px;
+}
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: black;
+}
+.user-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.user-info div {
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+.logout-btn {
+    background-color:rgb(38, 35, 35);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    font-size: 1rem;
+    border-radius: 5px;
+    margin-left: 20px;
+    cursor: pointer;
+}
+.logout-btn:hover {
+    background-color:rgb(14, 13, 13);
+}
+.content-section {
+    padding: 30px;
+}
+.input-group .form-control {
+    min-width: 150px;
+}
+.top-gap-after-navbar {
+    margin-top: 30px; /* Adjust spacing as needed */
+}
+/* Container styling for consistency */
+.container {
+    max-width: 100%;
+    padding: 20px;
+}
+/* Custom Search Button Styling */
+.btn-search {
+    background-color: #000000; /* Bootstrap green or change as needed */
+    color: white;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+.btn-search:hover {
+    background-color: #000000; /* Slightly darker green */
+    color: white;
+}
+/* Reduce space below buttons and forms */
+.d-flex.mb-2 {
+    margin-bottom: 5px !important;
+}
+.table-responsive {
+    max-height: 500px; /* You can increase or decrease this */
+    max-width: 1600px;
+    margin-left:30px;
+    overflow-y: auto;
+}
+
+/* Make sure tables use same full width and align */
+.table-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .1px; /* space between the tables */
+}
+/* Custom Button Colors */
+.btn-custom-add {
+    background-color:rgb(0, 0, 0); /* Green */
+    color: white;
+}
+
+.btn-custom-edit {
+    background-color:rgb(0, 0, 0); /* Yellow/Orange */
+    color: white;
+}
+
+.btn-custom-delete {
+    background-color:rgb(157, 0, 0); /* Red */
+    color: white;
+}
+
+.btn-custom-view {
+    background-color:rgb(0, 0, 0); /* Bootstrap primary color or choose your own */
+    color: white;
+    border: none;
+}
+
+
+.btn-custom-add:hover,
+.btn-custom-edit:hover,
+.btn-custom-delete:hover,
+.btn-custom-view:hover {
+    background-color: #f8f9fa;
+    color: black;
+}
+
+.appointment-heading{
+    text-align: left; 
+    margin-top: 1px; 
+    font-size: 1.8rem; 
+    margin-left: 26px;
+}
+
+/* Customize Modal Background */
+.modal-content {
+    background-color: #fff;
+    margin: 80px auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+/* Customize Modal Header */
+.modal-header {
+    background-color: #ffffff; /* Green header background */
+    color: rgb(0, 0, 0); /* White text in the header */
+}
+/* Customize Modal Title */
+.modal-title {
+    font-size: 1.2rem; /* Adjust title size */
+    color: rgb(0, 0, 0); /* White text for title */
+    font-weight: bold;
+}
+
+/* Customize Close Button */
+.btn-close {
+    color: rgb(0, 0, 0);
+}
+
+/* Customize Modal Body */
+.modal-body {
+    background-color: #ffffff; /* White background for body */
+    color: #000000; /* Dark text color */
+}
+
+/* Customize Modal Footer */
+.modal-footer {
+    background-color: #ffffff; /* Light gray footer */
+    border-top: 1px solid #ffffff;
+    margin-right: 10px;
+}
+
+/* Customize Submit Button */
+.btn-successs {
+    background-color: #000000; 
+    border-color: #ffffff; 
+}
+
+.btn-successs:hover {
+    background-color:rgb(0, 0, 0); 
+    color: white;
+}
+
+
+/* Customize Cancel Button */
+.btn-secondary {
+    background-color: #000000; /* Gray color for cancel button */
+    border-color: #ffffff;
+}
+
+.btn-secondary:hover {
+    background-color: #000000; /* Darker gray on hover */
+}
+
+/* Customize Buttons inside Modal */
+.btn-custom-add {
+    background-color: #000000;
+    color: white;
+    border-color: #000000;
+}
+
+.btn-custom-add:hover {
+    background-color: #ffffff;
+    border-color: #ffffff;
+}
+
+
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 1rem auto;
+        width: 90%;
+    }
+    .user-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .user-info img {
+        margin-bottom: 10px;
+    }
+    .navbar-nav .nav-link {
+        font-size: 1rem;
+    }
+}

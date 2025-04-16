@@ -1,0 +1,222 @@
+       body {
+            background-color: #f8f9fa;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgb(0, 0, 0);
+            border: 1px solid #ced4da;
+            color: rgb(255, 255, 255);
+            padding: 8px 20px;
+            font-weight: 500;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background-color: #e2e6ea;
+            color: #000;
+        }
+
+        .container {
+            margin-top: 80px;
+        }
+
+        .welcome-container {
+            background-image: url('../healthworker/b4.jpg');
+            background-size: cover;
+            background-position: center;
+            padding: 30px;
+            border-radius: 10px;
+            color: black;
+        }
+
+        .profile-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .doctor-header img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 20px;
+        }
+
+        .welcome-container h3 {
+            margin-top: 50px;
+            margin-left: 30px;
+            font-size: 1rem;
+        }
+
+        .welcome-container h1 {
+            font-size: 3rem;
+            margin-left: 30px;
+        }
+
+        .welcome-container p {
+            font-size: 1rem;
+            color: #555;
+            margin-bottom: 50px;
+            margin-left: 30px;
+        }
+        .create-section h3{
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .info-section table {
+            width: 100%;
+            margin-top: 15px;
+            margin-bottom: 0.5px;
+            border: 1px solid #ddd;
+            border-collapse: collapse;
+        }
+
+        .info-section th, .info-section td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2.5px solid #ddd;
+        }
+
+        .info-section h4 {
+            margin-top: 30px;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .edit-container{
+            margin-top: 5px;
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        .edit-container .btn {
+            background-color: rgb(162, 151, 151);
+            border: 1px solid #ced4da;
+            color: rgb(0, 0, 0);
+        }
+        .btn-container {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .btn-container .btn {
+            margin-top: 1px;
+            width: 200px;
+            background-color: rgb(0, 0, 0);
+            border: 1px solid #ced4da;
+            color: rgb(255, 255, 255);
+        }
+
+        /* Customize Modal Background */
+.modal-content {
+    background-color: #fff;
+    margin: 80px auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+/* Customize Modal Header */
+.modal-header {
+    background-color: #ffffff; /* Green header background */
+    color: rgb(0, 0, 0); /* White text in the header */
+}
+.modal-header button {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+  }
+/* Customize Modal Title */
+.modal-title {
+    font-size: 1.2rem; /* Adjust title size */
+    color: rgb(0, 0, 0); /* White text for title */
+    font-weight: bold;
+}
+
+/* Customize Close Button */
+.btn-close {
+    color: white;
+}
+
+/* Customize Modal Body */
+.modal-body {
+    background-color: #ffffff; /* White background for body */
+    color: #333333; /* Dark text color */
+}
+
+/* Customize Modal Footer */
+.modal-footer {
+    background-color: #f1f1f1; /* Light gray footer */
+    border-top: 1px solid #ddd;
+    margin-right: 10px;
+}
+
+/* Customize Submit Button */
+.btn-success {
+    background-color: #000000; /* Green background for button */
+    border-color: #ffffff; /* Match the border color */
+}
+
+.btn-success:hover {
+    background-color: #000000; /* Darker green on hover */
+}
+.btn-primary {
+    background-color: #000000; /* Green background for button */
+    border-color: #ffffff; /* Match the border color */
+}
+
+.btn-primary:hover {
+    background-color: #000000; /* Darker green on hover */
+}
+/* Customize Cancel Button */
+.btn-secondary {
+    background-color: #6c757d; /* Gray color for cancel button */
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268; /* Darker gray on hover */
+}
+
+/* Customize Buttons inside Modal */
+.btn-custom-add {
+    background-color: #000000;
+    color: white;
+    border-color: #000000;
+}
+
+.btn-custom-add:hover {
+    background-color: #ffffff;
+    border-color: #000000;
+}
+
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 1rem auto;
+        width: 90%;
+    }
+    .user-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .user-info img {
+        margin-bottom: 10px;
+    }
+    .navbar-nav .nav-link {
+        font-size: 1rem;
+    }
+}

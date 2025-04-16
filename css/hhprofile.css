@@ -1,0 +1,224 @@
+
+body {
+    background-color: #ffffff;
+}
+.navbar-custom {
+    background-color: #ffffff;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+.navbar-nav .nav-link {
+    color: black !important;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-top: 10px;
+}
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: black;
+}
+.user-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.user-info div {
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+.logout-btn {
+    background-color:rgb(38, 35, 35);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    font-size: 1rem;
+    border-radius: 5px;
+    margin-left: 20px;
+    cursor: pointer;
+}
+.logout-btn:hover {
+    background-color:rgb(14, 13, 13);
+}
+.content-section {
+    padding: 30px;
+}
+.top-gap-after-navbar {
+    margin-top: 30px; /* Adjust spacing as needed */
+}
+
+/* Container styling for consistency */
+.container {
+    max-width: 100%;
+    padding: 20px;
+}
+/* Custom Search Button Styling */
+.btn-search {
+    background-color: #000000; /* Bootstrap green or change as needed */
+    color: white;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-search:hover {
+    background-color: #000000; /* Slightly darker green */
+    color: white;
+}
+/* Reduce space below buttons and forms */
+.d-flex.mb-2 {
+    margin-bottom: 5px !important;
+}
+
+
+/* Make sure tables use same full width and align */
+.table-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .1px; /* space between the tables */
+}
+
+.table-responsive {
+    max-height: 500px; /* You can increase or decrease this */
+    max-width: 1600px;
+    margin-left: 30px;
+    overflow-y: auto;
+}
+
+/* Table header */
+.table-patients thead{
+    background-color: #0d6efd;
+    color: #000000;
+}
+
+/* General table styles */
+.table-patients td, .table-patients th{
+    padding: 12px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+/* Zebra striping */
+.table-patients tbody tr:nth-child(even){
+    background-color: #f8f9fa;
+}
+
+
+/* Custom Button Colors */
+.add-appointment{
+    background-color:rgb(0, 0, 0); /* Green */
+    color: white;
+}
+
+.btn-custom-edit {
+    background-color:rgb(0, 0, 0); /* Yellow/Orange */
+    color: white;
+}
+
+.btn-custom-delete {
+    background-color:rgb(157, 0, 0); /* Red */
+    color: white;
+}
+
+.btn-custom-view {
+    background-color:rgb(0, 0, 0); /* Bootstrap primary color or choose your own */
+    color: white;
+    border: none;
+}
+
+
+.add-appointment:hover,
+.btn-custom-edit:hover,
+.btn-custom-delete:hover,
+.btn-custom-view:hover {
+    background-color: #f8f9fa;
+    color: black;
+}
+.custom-modal-width {
+    max-width: 1000px; /* Adjust width as needed */
+    width: 100%; /* Adjust percentage as needed */
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 80px auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.modal-header {
+    background-color: #ffffff;
+    color: rgb(0, 0, 0); 
+}
+.modal-header button {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+.modal-title {
+    font-size: 1.2rem;
+    color: rgb(0, 0, 0); 
+    font-weight: bold;
+}
+
+.btn-close {
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+}
+.modal-body {
+    background-color: #ffffff; 
+    color: #000000; 
+}
+
+.modal-footer {
+    background-color: #ffffff; 
+    border-top: 1px solid #ddd;
+    margin-right: 10px;
+}
+
+.modal-footer .btn {
+    border-radius: 5px; 
+    padding: 10px 20px;
+}
+
+.modal-footer .btn-primary {
+    background-color: #000000; 
+    border-color: #f5f5f5;
+}
+
+.modal-footer .btn-secondary {
+    background-color: #000000; 
+    border-color: #ffffff;
+}
+
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out; 
+}
+
+
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5); 
+}
+
+
+@media (max-width: 768px) {
+    .user-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .user-info img {
+        margin-bottom: 10px;
+    }
+    .navbar-nav .nav-link {
+        font-size: 1rem;
+    }
+}
