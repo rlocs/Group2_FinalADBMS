@@ -1,24 +1,22 @@
 <?php
 session_start();
-include 'dbConnection.php'; // Make sure this file connects to your db_healthcenter
+require_once 'dbConnection.php'; // Make sure this contains the Database class
+
+$db = new Database();
+$conn = $db->getConnection();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
 
-    // Check if username and password are not empty
     if (!empty($username) && !empty($password)) {
-        $query = "SELECT * FROM users WHERE username = ?";
+        $query = "SELECT * FROM users WHERE username = :username";
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("s", $username);
+        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
         $stmt->execute();
-        $result = $stmt->get_result();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Check if user exists
-        if ($result->num_rows === 1) {
-            $user = $result->fetch_assoc();
-
-            // Verify password
+        if ($user) {
             if (password_verify($password, $user['password'])) {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];

@@ -46,11 +46,11 @@
             justify-content: center;
             align-items: center;
             border: 1px solid #ccc;
-            background-color: white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
+            background-color: rgb(203, 202, 209);
+            box-shadow: 0 6px 8px rgba(22, 22, 22, 0.1);
+            border-radius: 15px;
             flex-direction: column;
-            padding: 30px;
+            padding: 27.9px;
         }
 
         .square img {
@@ -123,7 +123,7 @@
 <body>
     <div class="container">
         <div class="square">
-            <img src="barangay health center of lipa logo.png" alt="Health Center Logo">
+            <img src="san pedro.png" alt="Health Center Logo">
         </div>
         <div class="square">
             <div class="login-title">Forgot Password</div>

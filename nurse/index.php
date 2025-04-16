@@ -44,10 +44,10 @@ if (isset($_POST['logout'])) {
                     <a class="nav-link" href="appointment.php" onclick="showSection('appointments')">Appointments</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#patient.php" onclick="showSection('patients')">Patients</a>
+                    <a class="nav-link" href="patient.php" onclick="showSection('patients')">Patients</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#hhprofile.php" onclick="showSection('households')">Household Profiles</a>
+                    <a class="nav-link" href="hhprofile.php" onclick="showSection('households')">Household Profiles</a>
                 </li>
             </ul>
 

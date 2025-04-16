@@ -1,365 +1,97 @@
+<?php
+session_start();
+if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
+    header("Location: ../login.php");
+    exit;
+}
+
+// Retrieve the username and other details from the session
+$username = $_SESSION['username'];
+$email = $username . "@gmail.com"; // Dummy email
+?>
+
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Profile</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 40px;
-      background-color: #fff;
-    }
-
-    .nav-buttons {
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .btn-back {
-      background-color: #e8edff;
-      border: none;
-      padding: 6px 12px;
-      font-size: 12px;
-      cursor: pointer;
-      color: #333;
-    }
-
-    .profile-header {
-      position: relative;
-      background: url('profile.jpg') no-repeat center center;
-      background-size: cover;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 30px;
-      margin-top: 20px;
-      color: white;
-    }
-
-    .profile-header::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-color: rgba(0, 0, 0, 0.4);
-      z-index: 0;
-    }
-
-    .profile-pic {
-      width: 150px;
-      height: 150px;
-      background-color: #fff;
-      border-radius: 50%;
-      z-index: 1;
-    }
-
-    .profile-text {
-      position: relative;
-      text-align: right;
-      z-index: 1;
-    }
-
-    .profile-text h2 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: bold;
-    }
-
-    .profile-text h3 {
-      margin: 10px 0 0;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .profile-text p {
-      margin: 5px 0 0;
-      font-size: 14px;
-    }
-
-    .profile-form {
-      display: flex;
-      gap: 40px;
-      margin-top: 40px;
-      flex-wrap: wrap;
-      position: relative;
-    }
-
-    .form-column {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      flex: 1;
-      min-width: 250px;
-    }
-
-    input[type="text"],
-    input[type="email"] {
-      background-color: #eaeaea;
-      border: none;
-      padding: 10px;
-      font-size: 14px;
-      width: 100%;
-    }
-
-    input:disabled {
-      background-color: #ddd;
-      color: #999;
-    }
-
-    .create-section {
-      margin-top: 20px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .create-link {
-      display: block;
-      color: #0044cc;
-      font-size: 18px;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .btn-create,
-    .btn-edit {
-      background-color: #5689f6;
-      border: none;
-      padding: 8px 16px;
-      font-size: 12px;
-      cursor: pointer;
-      color: white;
-    }
-
-    /* Modal Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.4);
-    }
-
-    .modal-content {
-      background-color: #fff;
-      margin: 80px auto;
-      padding: 20px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 500px;
-      position: relative;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal-header h2 {
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    .modal-header button {
-      background: none;
-      border: none;
-      font-size: 22px;
-      cursor: pointer;
-    }
-
-    .modal-content label {
-      display: block;
-      margin-top: 12px;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .modal-content input,
-    .modal-content select,
-    .modal-content textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    .modal-footer {
-      text-align: right;
-      margin-top: 20px;
-    }
-
-    .modal-footer button {
-      padding: 6px 12px;
-      margin-left: 10px;
-    }
-
-  </style>
-</head>
+  <head>
+    <meta charset="UTF-8">
+      <title>Healthworker Profile</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap 5 -->
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">   
+      <link rel="stylesheet" href="../css/profile.css">
+  </head>
 <body>
 
-<!-- Modal for Creating New Staff Account -->
-<div class="modal fade" id="createAccountModal" tabindex="-1" aria-labelledby="createAccountModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <form method="post" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Create New Staff Account</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3"><label class="form-label">Full Name</label><input type="text" name="name" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label">NIC Number</label><input type="text" name="nic" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label">Gmail</label><input type="email" name="email" class="form-control" required></div>
-        <div class="mb-3">
-          <label class="form-label">Gender</label>
-          <select name="gender" class="form-control" required>
-            <option value="" disabled selected>Select gender</option>
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-          </select>
+  <a href="index.php" class="btn back-button">&larr; Back</a>
+
+<div class="container">
+    <div class="profile-title">Profile</div>
+
+          <!-- Welcome Section -->
+          <div class="welcome-container mb-4">
+                  <h3>Welcome!</h3>
+                  <h1><?php echo htmlspecialchars($username); ?>.</h1>
+                  <p>Thanks for joining us. We are always striving to provide you with the best service.<br>
+                    You can view your daily schedule and manage your patient appointments!</p>
+              </div>
+
+              <!-- Staff Info -->
+              <div class="info-section mt-4">
+              <h4 class="mb-3">Your Information</h4>
+              <div class="table-responsive">
+                  <table class="table table-bordered table-striped table-hover align-middle shadow-sm">
+                      <tbody>
+                          <tr>
+                              <th class="w-25">Name</th>
+                              <td><?= htmlspecialchars($username); ?></td>
+                          </tr>
+                          <tr>
+                              <th>NIC Number</th>
+                              <td>123456789</td>
+                          </tr>
+                          <tr>
+                              <th>Email</th>
+                              <td><?= htmlspecialchars($email); ?></td>
+                          </tr>
+                          <tr>
+                              <th>Gender</th>
+                              <td>Male</td>
+                          </tr>
+                          <tr>
+                              <th>Date of Birth</th>
+                              <td>1980-01-01</td>
+                          </tr>
+                          <tr>
+                              <th>Address</th>
+                              <td>123 Main St, City, Country</td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+
+
+        <!-- Edit Button to open Modal -->
+        <div class="edit-container">
+            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editProfileModal">Edit Profile</button>
         </div>
-        <div class="mb-3"><label class="form-label">Date of Birth</label><input type="date" name="dob" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label">Address</label><textarea name="address" class="form-control" rows="2" required></textarea></div>
-        <div class="mb-3">
-          <label class="form-label">User Type</label>
-          <select name="usertype" class="form-control" required>
-            <option value="" disabled selected>Choose user type</option>
-            <option value="Healthworker">Healthworker</option>
-            <option value="Nurse">Nurse</option>
-            <option value="Doctor">Doctor</option>
-          </select>
+        
+        <div class="create-section mt-4">
+            <h3>Create Account For The HealthCenter Team!</h3>
         </div>
-        <div class="mb-3"><label class="form-label">Username</label><input type="text" name="username" class="form-control" required></div>
-        <div class="mb-3"><label class="form-label">Password</label><input type="password" name="password" class="form-control" required></div>
-      </div>
-      <div class="modal-footer">
-        <button type="submit" name="create_account" class="btn btn-primary">Create Account</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-      </div>
-    </form>
-  </div>
+
+        <div class="btn-container">
+            <button class="btn btn-success action-button" data-bs-toggle="modal" data-bs-target="#createAccountModal">Create</button>
+        </div>
+        
+        </div>
+    </div>
 </div>
-  
 
 
-  <div class="nav-buttons">
-    <button class="btn-back">Back</button>
-  </div>
-
-  <div class="profile-header">
-    <div class="profile-pic"></div>
-    <div class="profile-text">
-      <h2>Profile</h2>
-      <h3>Hello there Healthworker!</h3>
-      <p>All systems are running smoothly. Let's get started.</p>
-    </div>
-  </div>
-
-  <form class="profile-form" action="save_profile.php" method="POST">
-    <div class="form-column">
-      <input type="text" name="name" placeholder="Name" disabled>
-      <input type="text" name="nic" placeholder="NIC Number" disabled>
-      <input type="email" name="email" placeholder="Gmail acc" disabled>
-      <input type="text" name="gender" placeholder="Gender" disabled>
-    </div>
-    <div class="form-column">
-      <input type="text" name="dob" placeholder="Date of Birth" disabled>
-      <input type="text" name="address" placeholder="Address" disabled>
-
-      <!-- Edit Profile button -->
-      <div style="text-align: right;">
-        <button type="button" class="btn-edit" onclick="openModal()">Edit Profile</button>
-      </div>
-
-      <!-- Create section -->
-      <div class="create-section">
-        <a href="profile.php" class="create-link">Create Acc for the Staff</a>
-        <button type="submit" class="btn-create">Create</button>
-      </div>
-    </div>
-  </form>
-
-  <!-- Modal for editing profile -->
-  <div class="modal" id="editModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Edit Profile</h2>
-        <button onclick="closeModal()">&times;</button>
-      </div>
-      <form id="editProfileForm">
-        <label for="modalName">Name</label>
-        <input type="text" id="modalName" placeholder="Enter your name">
-
-        <label for="modalNic">NIC Number</label>
-        <input type="text" id="modalNic" placeholder="Enter NIC number">
-
-        <label for="modalEmail">Email</label>
-        <input type="email" id="modalEmail" placeholder="Enter your email">
-
-        <label for="modalGender">Gender</label>
-        <select id="modalGender">
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select>
-
-        <label for="modalDob">Date of Birth</label>
-        <input type="date" id="modalDob">
-
-        <label for="modalAddress">Address</label>
-        <textarea id="modalAddress" rows="2" placeholder="Enter address"></textarea>
-
-        <div class="modal-footer">
-          <button type="button" onclick="closeModal()">Cancel</button>
-          <button type="button" onclick="saveChanges()">Save Changes</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    // Open the modal for editing profile
-    function openModal() {
-      document.getElementById("editModal").style.display = "block";
-    }
-
-    // Close the modal without saving changes
-    function closeModal() {
-      document.getElementById("editModal").style.display = "none";
-    }
-
-    // Function to save the changes (just an alert for now)
-    function saveChanges() {
-      // Get the values from the modal input fields
-      const name = document.getElementById("modalName").value;
-      const nic = document.getElementById("modalNic").value;
-      const email = document.getElementById("modalEmail").value;
-      const gender = document.getElementById("modalGender").value;
-      const dob = document.getElementById("modalDob").value;
-      const address = document.getElementById("modalAddress").value;
-
-      // You can update the form or send data to the server here
-      alert(`Changes saved:\nName: ${name}\nNIC: ${nic}\nEmail: ${email}\nGender: ${gender}\nDOB: ${dob}\nAddress: ${address}`);
-
-      // Close the modal after saving
-      closeModal();
-    }
 
 
-    window.onclick = function(event) {
-      const modal = document.getElementById("editModal");
-      if (event.target === modal) {
-        closeModal();
-      }
-    };
-  </script>
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

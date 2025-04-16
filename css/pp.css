@@ -45,12 +45,10 @@ body {
 .content-section {
     padding: 30px;
 }
-.input-group .form-control {
-    min-width: 150px;
-}
 .top-gap-after-navbar {
     margin-top: 30px; /* Adjust spacing as needed */
 }
+
 /* Container styling for consistency */
 .container {
     max-width: 100%;
@@ -63,6 +61,7 @@ body {
     border: none;
     transition: background-color 0.3s ease;
 }
+
 .btn-search:hover {
     background-color: #000000; /* Slightly darker green */
     color: white;
@@ -71,12 +70,7 @@ body {
 .d-flex.mb-2 {
     margin-bottom: 5px !important;
 }
-.table-responsive {
-    max-height: 500px; /* You can increase or decrease this */
-    max-width: 1600px;
-    margin-left:30px;
-    overflow-y: auto;
-}
+
 
 /* Make sure tables use same full width and align */
 .table-container {
@@ -85,6 +79,40 @@ body {
     flex-direction: column;
     gap: .1px; /* space between the tables */
 }
+
+/* Style for both tables */
+.table-patients,
+.table-intervention {
+    width: 100%;
+    min-width: 100px;
+    border-collapse: collapse;
+    margin: 0 auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+
+/* Table header */
+.table-patients thead,
+.table-intervention thead {
+    background-color: #0d6efd;
+    color: #000000;
+}
+
+/* General table styles */
+.table-patients td, .table-patients th,
+.table-intervention td, .table-intervention th {
+    padding: 12px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+/* Zebra striping */
+.table-patients tbody tr:nth-child(even),
+.table-intervention tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+
 /* Custom Button Colors */
 .btn-custom-add {
     background-color:rgb(0, 0, 0); /* Green */
@@ -115,15 +143,32 @@ body {
     background-color: #f8f9fa;
     color: black;
 }
-
-.appointment-heading{
-    text-align: left; 
-    margin-top: 1px; 
-    font-size: 1.8rem; 
+.table-intervention th, .table-intervention td {
+text-align: left; /* Center-align text inside table cells */
+}
+.intervention-heading {
+    text-align: left;
+    margin-top: 5px;
+    font-size: 1.8rem;
     margin-left: 26px;
 }
+.table-intervention {
+    width: 95%;
+    margin-top: 1%;
+    margin-left: 26px;
+    margin-right: 15px;
+}
 
-/* Customize Modal Background */
+.table-intervention thead {
+    background-color: #f7f7f7;
+    font-weight: bold;
+}
+
+.table-intervention tbody tr:hover {
+    background-color: #f1f1f1; /* Hover effect for rows */
+}
+
+/* Customize modal background and border */
 .modal-content {
     background-color: #fff;
     margin: 80px auto;
@@ -134,76 +179,66 @@ body {
     position: relative;
 }
 
-/* Customize Modal Header */
 .modal-header {
-    background-color: #ffffff; /* Green header background */
-    color: rgb(0, 0, 0); /* White text in the header */
+    background-color: #ffffff;
+    color: rgb(0, 0, 0); 
 }
-/* Customize Modal Title */
+.modal-header button {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+  }
+
 .modal-title {
-    font-size: 1.2rem; /* Adjust title size */
-    color: rgb(0, 0, 0); /* White text for title */
+    font-size: 1.2rem;
+    color: rgb(0, 0, 0); 
     font-weight: bold;
 }
 
-/* Customize Close Button */
 .btn-close {
+    background-color: transparent;
+    border: none;
     color: rgb(0, 0, 0);
+    font-size: 1.5rem;
 }
-
-/* Customize Modal Body */
 .modal-body {
-    background-color: #ffffff; /* White background for body */
-    color: #000000; /* Dark text color */
+    background-color: #ffffff; 
+    color: #000000; 
 }
 
-/* Customize Modal Footer */
 .modal-footer {
-    background-color: #ffffff; /* Light gray footer */
-    border-top: 1px solid #ffffff;
+    background-color: #ffffff; 
+    border-top: 1px solid #ddd;
     margin-right: 10px;
 }
 
-/* Customize Submit Button */
-.btn-successs {
+.modal-footer .btn {
+    border-radius: 5px; 
+    padding: 10px 20px;
+}
+
+.modal-footer .btn-primary {
     background-color: #000000; 
-    border-color: #ffffff; 
+    border-color: #f5f5f5;
 }
 
-.btn-successs:hover {
-    background-color:rgb(0, 0, 0); 
-    color: white;
-}
-
-
-/* Customize Cancel Button */
-.btn-secondary {
-    background-color: #000000; /* Gray color for cancel button */
+.modal-footer .btn-secondary {
+    background-color: #000000; 
     border-color: #ffffff;
 }
 
-.btn-secondary:hover {
-    background-color: #000000; /* Darker gray on hover */
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out; 
 }
 
-/* Customize Buttons inside Modal */
-.btn-custom-add {
-    background-color: #000000;
-    color: white;
-    border-color: #000000;
-}
 
-.btn-custom-add:hover {
-    background-color: #ffffff;
-    border-color: #ffffff;
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5); 
 }
 
 
 @media (max-width: 768px) {
-    .modal-dialog {
-        margin: 1rem auto;
-        width: 90%;
-    }
     .user-info {
         flex-direction: column;
         align-items: flex-start;

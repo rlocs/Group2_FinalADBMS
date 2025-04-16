@@ -10,7 +10,6 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Doctor') {
 // Example user details
 $username = $_SESSION['username'];
 $email = $username . "@gmail.com"; // Replace with actual DB email if needed
-$profilePic = "../profilepic.jpg"; // Use a default image or fetch from DB if available
 
 // Logout functionality
 if (isset($_POST['logout'])) {
@@ -53,9 +52,6 @@ if (isset($_POST['logout'])) {
 
             <!-- Right side profile and logout -->
             <div class="user-info">
-                <a href="profile.php">
-                    <img src="<?php echo $profilePic; ?>" alt="Profile Picture">
-                </a>
                 <div>
                     <div>
                         <a href="profile.php" style="text-decoration: none; color: black;">
