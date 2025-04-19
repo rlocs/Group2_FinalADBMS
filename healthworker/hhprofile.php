@@ -23,6 +23,7 @@ if (isset($_POST['logout'])) {
     <meta charset="UTF-8">
     <title>Household Profiles</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Manage HouseHold Profile.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/hhprofile.css">
@@ -33,12 +34,20 @@ if (isset($_POST['logout'])) {
 <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container-fluid">
         <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item"><a class="nav-link" href="index.php">Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link" href="appointment.php">Appointments</a></li>
-                <li class="nav-item"><a class="nav-link" href="patient.php">Patients</a></li>
-                <li class="nav-item"><a class="nav-link active" href="hhprofile.php">Household Profiles</a></li>
-            </ul>
+        <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>" href="index.php">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'appointment.php' ? 'active' : ''; ?>" href="appointment.php">Appointments</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'patient.php' ? 'active' : ''; ?>" href="patient.php">Patients</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'hhprofile.php' ? 'active' : ''; ?>" href="hhprofile.php">Household Profiles</a>
+                    </li>
+                </ul>
             <div class="user-info">
                 <div>
                     <a href="profile.php" style="text-decoration: none;font-size: 1.7rem; color: black;"><strong><?= htmlspecialchars($username) ?></strong></a><br>

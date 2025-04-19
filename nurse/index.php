@@ -58,13 +58,8 @@ if (isset($_POST['logout'])) {
                 </a>
                 <div>
                     <div>
-                        <a href="profile.php" style="text-decoration: none; color: black;">
+                        <a href="profile.php" style="text-decoration: none;font-size: 1.7rem; color: black;">
                             <strong><?php echo htmlspecialchars($username); ?></strong>
-                        </a>
-                    </div>
-                    <div>
-                        <a href="mailto:<?php echo htmlspecialchars($email); ?>" style="text-decoration: none; color: black;">
-                            <?php echo htmlspecialchars($email); ?>
                         </a>
                     </div>
                 </div>

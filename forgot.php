@@ -5,12 +5,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <meta name="description" content="Reset your password securely through our health center system. Enter your email to receive password recovery instructions.">
+    <title>Forgot Password</title>
 
     <!-- Boxicons for icons -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-
-    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" crossorigin="anonymous"></script>
@@ -70,7 +69,7 @@
             top: 50%;
             left: 10px;
             transform: translateY(-50%);
-            color: #999;
+            color: #444;
         }
 
         .form-control {
@@ -110,7 +109,7 @@
 
         .forgot-password a {
             font-size: 14px;
-            color: #007bff;
+            color: #0040aa;
             text-decoration: none;
         }
 
@@ -123,7 +122,7 @@
 <body>
     <div class="container">
         <div class="square">
-            <img src="san pedro.png" alt="Health Center Logo">
+            <img src="sanpedro.png" alt="Health Center Logo">
         </div>
         <div class="square">
             <div class="login-title">Forgot Password</div>

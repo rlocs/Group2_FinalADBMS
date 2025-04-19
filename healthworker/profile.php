@@ -16,7 +16,7 @@ $email = $username . "@gmail.com"; // Dummy email
     <meta charset="UTF-8">
       <title>Healthworker Profile</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <!-- Bootstrap 5 -->
+        <meta name="description" content="View and update your healthworker profile. Create accounts for HealthCenter team members.">
       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">   
       <link rel="stylesheet" href="../css/profile.css">
   </head>
