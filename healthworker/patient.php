@@ -22,6 +22,7 @@ if (isset($_POST['logout'])) {
     <head>
         <meta charset="UTF-8">
         <title>Patient</title>
+        <meta name="description" content="Manage patients, view medical records, and interventions in the patient page.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
@@ -36,16 +37,16 @@ if (isset($_POST['logout'])) {
                 <!-- Left nav links -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php" onclick="showSection('dashboard')">Dashboard</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>" href="index.php">Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="appointment.php" onclick="showSection('appointments')">Appointments</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'appointment.php' ? 'active' : ''; ?>" href="appointment.php">Appointments</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="patient.php" onclick="showSection('patients')">Patients</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'patient.php' ? 'active' : ''; ?>" href="patient.php">Patients</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="hhprofile.php" onclick="showSection('households')">Household Profiles</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'hhprofile.php' ? 'active' : ''; ?>" href="hhprofile.php">Household Profiles</a>
                     </li>
                 </ul>
 
@@ -136,10 +137,6 @@ if (isset($_POST['logout'])) {
                         <div class="mb-3">
                             <label>Reason</label>
                             <input type="text" name="reason" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Description</label>
-                            <textarea name="description" class="form-control" required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -331,12 +328,12 @@ if (isset($_POST['logout'])) {
     
 </div>
 <script>
-    function showSection(id) {
-        document.querySelectorAll('.content').forEach(div => {
-            div.classList.remove('active');
-        });
-        document.getElementById(id).classList.add('active');
-    }
+function showSection(id) {
+    document.querySelectorAll('.content').forEach(div => {
+        div.style.display = 'none';
+    });
+    document.getElementById(id).style.display = 'block';
+}
 </script>
 
 <!-- SweetAlert JS -->

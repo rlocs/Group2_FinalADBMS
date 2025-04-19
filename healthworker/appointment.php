@@ -21,6 +21,7 @@ if (isset($_POST['logout'])) {
     <meta charset="UTF-8">
     <title>Appointment</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Manage your appointments and schedule with ease. Add, edit, or delete appointments for patients and doctors in the health center.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/appointment.css">
@@ -34,18 +35,19 @@ if (isset($_POST['logout'])) {
             <!-- Left side nav -->
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php" onclick="showSection('dashboard')">Dashboard</a>
+                    <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>" href="index.php">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="appointment.php" onclick="showSection('appointments')">Appointments</a>
+                    <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'appointment.php' ? 'active' : ''; ?>" href="appointment.php">Appointments</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="patient.php" onclick="showSection('patients')">Patients</a>
+                    <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'patient.php' ? 'active' : ''; ?>" href="patient.php">Patients</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="hhprofile.php" onclick="showSection('households')">Household Profiles</a>
+                    <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'hhprofile.php' ? 'active' : ''; ?>" href="hhprofile.php">Household Profiles</a>
                 </li>
             </ul>
+
 
             <!-- Right side profile and logout -->
             <div class="user-info">
@@ -69,9 +71,9 @@ if (isset($_POST['logout'])) {
     <div class="d-flex justify-content-between align-items-center mb-2" style="margin: 0 26px;">
         <!-- Add Patient Button -->
         <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-custom-add"data-bs-toggle="modal" data-bs-target="#addAppointmentModal">
+        <button type="button" class="btn btn-custom-add" data-bs-toggle="modal" data-bs-target="#addAppointmentModal" aria-label="Add Appointment">
             <i class="bi bi-plus-circle"></i>
-            </button>
+        </button>
             <span class="ms-2">Add Appointment</span>
         </div>
 
@@ -120,8 +122,9 @@ if (isset($_POST['logout'])) {
                     <td><?= $a['reason'] ?></td>
                     <td>
                         <!-- Edit Button -->
-                        <button class="btn btn-custom-edit btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $a['id'] ?>">Edit</button>
-
+                        <button class="btn btn-custom-edit btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $a['id'] ?>" aria-label="Edit Appointment">
+                            Edit
+                        </button>
                         <!-- Delete Form -->
                         <form method="post" class="d-inline" onsubmit="return confirm('Delete this appointment?');">
                             <input type="hidden" name="delete_id" value="<?= $a['id'] ?>">
@@ -134,7 +137,6 @@ if (isset($_POST['logout'])) {
                                 <form method="post" class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title" id="editModalLabel<?= $a['id'] ?>">Edit Appointment</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
                                         <div class="mb-3">
@@ -180,7 +182,6 @@ if (isset($_POST['logout'])) {
         <form method="post" class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addAppointmentModalLabel">Add Appointment</h5>
-                <button type="button" class="btn-custom-add " data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <!-- Patient Name -->
