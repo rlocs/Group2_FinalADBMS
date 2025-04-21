@@ -54,18 +54,32 @@ if (isset($_POST['logout'])) {
 
 
                 <!-- Right side profile and logout -->
-                <div class="user-info">
-                    <div>
-                        <div>
-                            <a href="profile.php" style="text-decoration: none;font-size: 1.7rem; color: black;">
-                                <strong><?php echo htmlspecialchars($username); ?></strong>
-                            </a>
-                        </div>
-                    </div>
-                    <form method="POST" action="">
-                        <button type="submit" name="logout" class="logout-btn">Logout</button>
-                    </form>
-                </div>
+                <!-- USER INFO WRAPPER -->
+<div class="user-info">
+    <!-- DATE -->
+    <div class="user-date">
+        <p class="label">Today's Date</p>
+        <p class="value">
+            <?php 
+                date_default_timezone_set('Asia/Manila');
+                echo date('Y-m-d');
+            ?>
+        </p>
+    </div>
+
+    <!-- USERNAME -->
+    <div class="user-name">
+        <a href="profile.php">
+            <strong><?php echo htmlspecialchars($username); ?></strong>
+        </a>
+    </div>
+
+    <!-- LOGOUT -->
+    <form method="POST" action="">
+        <button type="submit" name="logout" class="logout-btn">Logout</button>
+    </form>
+</div>
+
             </div>
         </div>
     </nav>
@@ -94,16 +108,6 @@ if (isset($_POST['logout'])) {
                                         <tr>
                                             <td colspan="4">
                                                 <p style="font-size: 25px; font-weight: 600; padding-left: 12px;">Status</p>
-                                                    <p style="font-size: 14px;color: rgb(119, 119, 119);padding: 0;margin: 0;text-align: right;">
-                                                        Today's Date
-                                                    </p>
-                                                    <p class="heading-sub12" style="padding: 0;margin: 0;">
-                                                        <?php 
-                                                    date_default_timezone_set('Asia/Manila');
-                            
-                                                    $today = date('Y-m-d');
-                                                    echo $today; ?>
-                                                    </p>
                                             </td>
                                             
                                         </tr>

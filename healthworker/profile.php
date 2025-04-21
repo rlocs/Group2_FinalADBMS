@@ -1,4 +1,5 @@
 <?php
+include 'dbConnection.php'; // adjust path as needed
 session_start();
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
     header("Location: ../login.php");

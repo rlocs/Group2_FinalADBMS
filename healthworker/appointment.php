@@ -47,21 +47,32 @@ if (isset($_POST['logout'])) {
                     <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'hhprofile.php' ? 'active' : ''; ?>" href="hhprofile.php">Household Profiles</a>
                 </li>
             </ul>
+            
+                <!-- USER INFO WRAPPER -->
+                <div class="user-info">
+                    <!-- DATE -->
+                    <div class="user-date">
+                        <p class="label">Today's Date</p>
+                        <p class="value">
+                            <?php 
+                                date_default_timezone_set('Asia/Manila');
+                                echo date('Y-m-d');
+                            ?>
+                        </p>
+                    </div>
 
-
-            <!-- Right side profile and logout -->
-            <div class="user-info">
-                <div>
-                    <div>
-                        <a href="profile.php" style="text-decoration: none; font-size: 1.7rem; color: black;">
+                    <!-- USERNAME -->
+                    <div class="user-name">
+                        <a href="profile.php">
                             <strong><?php echo htmlspecialchars($username); ?></strong>
                         </a>
                     </div>
+
+                    <!-- LOGOUT -->
+                    <form method="POST" action="">
+                        <button type="submit" name="logout" class="logout-btn">Logout</button>
+                    </form>
                 </div>
-                <form method="POST" action="">
-                    <button type="submit" name="logout" class="logout-btn">Logout</button>
-                </form>
-            </div>
         </div>
     </div>
 </nav>
