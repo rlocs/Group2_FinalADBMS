@@ -1,4 +1,5 @@
 <?php
+require '../dbConnection.php';
 session_start();
 
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
@@ -14,7 +15,8 @@ if (isset($_POST['logout'])) {
     header("Location: ../login.php");
     exit;
 }
-
+$database = new Database();
+$conn = $database->getConnection();
 ?>
 
 <!DOCTYPE html>
@@ -104,7 +106,7 @@ if (isset($_POST['logout'])) {
 
         <div class="modal fade" id="addPatientModal" tabindex="-1" aria-labelledby="addPatientModalLabel" aria-hidden="true">
             <div class="modal-dialog">
-                <form method="post" class="modal-content">
+                <form method="post" action="patient_crud.php" class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="addPatientModalLabel">Add New Patient</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -159,122 +161,128 @@ if (isset($_POST['logout'])) {
             </div>
         </div>
 
-        <!-- Patient Table -->
-        <div class="table-responsive mt-4">
-            <div class="table-container">
-            <h4 class="fw-bold mt-3" style="text-align: left; font-size: 1.8rem; margin-left: 26px;">Patients Records</h4>
-            <table class="table table-bordered table-hover bg-white table-intervention">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Age</th>
-                            <th>Gender</th>
-                            <th>Address</th>
-                            <th>Parents</th>
-                            <th>DOB</th>
-                            <th>Weight</th>
-                            <th>Height</th>
-                            <th>Blood Type</th>
-                            <th>Reason</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="patientTableBody">
-                        <?php
-                        // Example dummy data (replace with data from view.php)
-                        $patients = [
-                            ["id" => 1, "name" => "John Doe", "age" => 30, "gender" => "Male", "address" => "1234 Elm Street", "parents" => "Jane Doe", "dob" => "1995-02-15", "weight" => "70kg", "height" => "180cm", "blood_type" => "O+", "reason" => "Checkup"],
-                            ["id" => 2, "name" => "Jane Roe", "age" => 28, "gender" => "Female", "address" => "5678 Oak Avenue", "parents" => "John Roe", "dob" => "1997-06-20", "weight" => "60kg", "height" => "165cm", "blood_type" => "A-", "reason" => "Flu"]
-                        ];
+         <!-- Patient Table -->
+<div class="table-responsive mt-4">
+    <div class="table-container">
+        <h4 class="fw-bold mt-3" style="text-align: left; font-size: 1.8rem; margin-left: 26px;">Patients Records</h4>
+        <table class="table table-bordered table-hover bg-white table-intervention">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Address</th>
+                    <th>Parents</th>
+                    <th>DOB</th>
+                    <th>Weight</th>
+                    <th>Height</th>
+                    <th>Blood Type</th>
+                    <th>Reason</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="patientTableBody">
+                <?php
+                try {
+                    $query = "SELECT *, TIMESTAMPDIFF(YEAR, dob, CURDATE()) AS age FROM patients"; 
+                    $stmt = $conn->prepare($query);
+                    $stmt->execute();
 
-                        foreach ($patients as $p): ?>
-                        <tr>
-                            <td><?= $p['id'] ?></td>
-                            <td><?= htmlspecialchars($p['name']) ?></td>
-                            <td><?= $p['age'] ?></td>
-                            <td><?= $p['gender'] ?></td>
-                            <td><?= htmlspecialchars($p['address']) ?></td>
-                            <td><?= htmlspecialchars($p['parents']) ?></td>
-                            <td><?= $p['dob'] ?></td>
-                            <td><?= $p['weight'] ?></td>
-                            <td><?= $p['height'] ?></td>
-                            <td><?= $p['blood_type'] ?></td>
-                            <td><?= $p['reason'] ?></td>
-                            <td>
-                                <!-- Edit Button -->
-                                <button class="btn btn-custom-edit btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $p['id'] ?>">Edit</button>
+                    while ($p = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
+                    <tr>
+                        <td><?= $p['patient_id'] ?></td>
+                        <td><?= htmlspecialchars($p['name']) ?></td>
+                        <td><?= htmlspecialchars($p['age']) ?></td>
+                        <td><?= htmlspecialchars($p['gender']) ?></td>
+                        <td><?= htmlspecialchars($p['address']) ?></td>
+                        <td><?= htmlspecialchars($p['parents']) ?></td>
+                        <td><?= htmlspecialchars($p['dob']) ?></td>
+                        <td><?= htmlspecialchars($p['weight']) ?></td>
+                        <td><?= htmlspecialchars($p['height']) ?></td>
+                        <td><?= htmlspecialchars($p['blood_type']) ?></td>
+                        <td><?= htmlspecialchars($p['reason']) ?></td>
+                        <td>
+                            <!-- Edit Button -->
+                            <button class="btn btn-custom-edit btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $p['patient_id'] ?>">Edit</button>
 
-                                <!-- Delete Form -->
-                                <form method="post" class="d-inline" onsubmit="return confirm('Delete this patient?');">
-                                    <input type="hidden" name="delete_id" value="<?= $p['id'] ?>">
-                                    <button type="submit" name="delete" class="btn btn-custom-delete btn-sm">Delete</button>
-                                </form>
+                            <!-- Delete Form -->
+                            <form method="post" action="delete_patient.php" class="d-inline" onsubmit="return confirm('Delete this patient?');">
+                                <input type="hidden" name="delete_id" value="<?= $p['patient_id'] ?>">
+                                <button type="submit" name="delete" class="btn btn-custom-delete btn-sm">Delete</button>
+                            </form>
 
-                                <!-- Edit Modal -->
-                                <div class="modal fade" id="editModal<?= $p['id'] ?>" tabindex="-1" aria-labelledby="editModalLabel<?= $p['id'] ?>" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <form method="post" class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="editModalLabel<?= $p['id'] ?>">Edit Patient</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <!-- Edit Modal -->
+                            <div class="modal fade" id="editModal<?= $p['patient_id'] ?>" tabindex="-1" aria-labelledby="editModalLabel<?= $p['patient_id'] ?>" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <form method="post" action="patient_crud.php" class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="editModalLabel<?= $p['id'] ?>">Edit Patient</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                                            <div class="mb-3">
+                                                <label>Name</label>
+                                                <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($p['name']) ?>" required>
                                             </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label>Name</label>
-                                                    <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($p['name']) ?>" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label>Age</label>
-                                                    <input type="number" name="age" class="form-control" value="<?= $p['age'] ?>" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label>Gender</label>
-                                                    <input type="text" name="gender" class="form-control" value="<?= htmlspecialchars($p['gender']) ?>" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label>Address</label>
-                                                    <input type="text" name="address" class="form-control" value="<?= htmlspecialchars($p['address']) ?>" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label>Parents</label>
-                                                    <input type="text" name="parents" class="form-control" value="<?= htmlspecialchars($p['parents']) ?>" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label>DOB</label>
-                                                    <input type="date" name="dob" class="form-control" value="<?= $p['dob'] ?>" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label>Weight</label>
-                                                    <input type="text" name="weight" class="form-control" value="<?= $p['weight'] ?>" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label>Height</label>
-                                                    <input type="text" name="height" class="form-control" value="<?= $p['height'] ?>" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label>Blood Type</label>
-                                                    <input type="text" name="blood_type" class="form-control" value="<?= $p['blood_type'] ?>" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label>Reason</label>
-                                                    <input type="text" name="reason" class="form-control" value="<?= $p['reason'] ?>" required>
-                                                </div>
+                                            <div class="mb-3">
+                                                <label>Age</label>
+                                                <input type="number" name="age" class="form-control" value="<?= htmlspecialchars($p['age']) ?>" required>
                                             </div>
-                                            <div class="modal-footer">
-                                                <button type="submit" name="update" class="btn btn-primary">Save Changes</button>
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <div class="mb-3">
+                                                <label>Gender</label>
+                                                <input type="text" name="gender" class="form-control" value="<?= htmlspecialchars($p['gender']) ?>" required>
                                             </div>
-                                        </form>
-                                    </div>
+                                            <div class="mb-3">
+                                                <label>Address</label>
+                                                <input type="text" name="address" class="form-control" value="<?= htmlspecialchars($p['address']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>Parents</label>
+                                                <input type="text" name="parents" class="form-control" value="<?= htmlspecialchars($p['parents']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>DOB</label>
+                                                <input type="date" name="dob" class="form-control" value="<?= htmlspecialchars($p['dob']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>Weight</label>
+                                                <input type="text" name="weight" class="form-control" value="<?= htmlspecialchars($p['weight']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>Height</label>
+                                                <input type="text" name="height" class="form-control" value="<?= htmlspecialchars($p['height']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>Blood Type</label>
+                                                <input type="text" name="blood_type" class="form-control" value="<?= htmlspecialchars($p['blood_type']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>Reason</label>
+                                                <input type="text" name="reason" class="form-control" value="<?= htmlspecialchars($p['reason']) ?>" required>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" name="update" class="btn btn-primary">Save Changes</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </form>
                                 </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endwhile; ?>
+                <?php
+                } catch (PDOException $e) {
+                    echo "Error fetching patients: " . $e->getMessage();
+                }
+                ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 
         <div class="table-container">
         <div class="table-responsive mt-4">

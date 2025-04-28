@@ -1,4 +1,5 @@
 <?php
+require '../dbConnection.php';
 session_start();
 
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
@@ -13,6 +14,8 @@ if (isset($_POST['logout'])) {
     header("Location: ../login.php");
     exit;
 }
+$database = new Database();
+$conn = $database->getConnection();
 ?>
 
 <!DOCTYPE html>
@@ -101,13 +104,13 @@ if (isset($_POST['logout'])) {
 
     <!-- Appointment Table -->
 <div class="table-responsive mt-4">
-<div class="table-container">
-<h4 class="fw-bold appointment-heading"style="margin-left: 10px;">Appointment List</h4>
-    <table class="table table-bordered table-hover bg-white">
+    <div class="table-container">
+        <h4 class="fw-bold appointment-heading" style="margin-left: 10px;">Appointment List</h4>
+        <table class="table table-bordered table-hover bg-white">
             <thead class="table-light">
                 <tr>
-                    <th>ID</th>
-                    <th>Patient</th>
+                    <th>Appointment ID</th>
+                    <th>Patient Name</th>
                     <th>Date</th>
                     <th>Time</th>
                     <th>Doctor</th>
@@ -117,71 +120,78 @@ if (isset($_POST['logout'])) {
             </thead>
             <tbody id="appointmentTableBody">
                 <?php
-                // Example dummy data (replace with data from view.php)
-                $appointments = [
-                    ["id" => 1, "patient_name" => "John Doe", "date" => "2025-04-15", "time" => "10:00", "doctor" => "Dr. Smith", "reason" => "Checkup"],
-                    ["id" => 2, "patient_name" => "Jane Roe", "date" => "2025-04-16", "time" => "14:00", "doctor" => "Dr. Lee", "reason" => "Flu"]
-                ];
+                    $sql = "SELECT * FROM appointments;";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute();
+                    $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                foreach ($appointments as $a): ?>
-                <tr>
-                    <td><?= $a['id'] ?></td>
-                    <td><?= htmlspecialchars($a['patient_name']) ?></td>
-                    <td><?= $a['date'] ?></td>
-                    <td><?= $a['time'] ?></td>
-                    <td><?= htmlspecialchars($a['doctor']) ?></td>
-                    <td><?= $a['reason'] ?></td>
-                    <td>
-                        <!-- Edit Button -->
-                        <button class="btn btn-custom-edit btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $a['id'] ?>" aria-label="Edit Appointment">
-                            Edit
-                        </button>
-                        <!-- Delete Form -->
-                        <form method="post" class="d-inline" onsubmit="return confirm('Delete this appointment?');">
-                            <input type="hidden" name="delete_id" value="<?= $a['id'] ?>">
-                            <button type="submit" name="delete" class="btn btn-custom-delete btn-sm">Delete</button>
-                        </form>
+                    if (count($appointments) > 0):
+                        foreach ($appointments as $a):
+                ?>
+                            <tr>
+                                <td><?= $a['appointment_id'] ?></td>
+                                <td><?= htmlspecialchars($a['patient_name']) ?></td>
+                                <td><?= htmlspecialchars($a['date']) ?></td>
+                                <td><?= htmlspecialchars($a['time']) ?></td>
+                                <td><?= htmlspecialchars($a['doctor']) ?></td>
+                                <td><?= htmlspecialchars($a['reason']) ?></td>
+                                <td>
+                                    <!-- Edit Button -->
+                                    <button class="btn btn-custom-edit btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $a['appointment_id'] ?>" aria-label="Edit Appointment">
+                                        Edit
+                                    </button>
+                                    <!-- Delete Form -->
+                                    <form method="post" action="delete.php" class="d-inline" onsubmit="return confirm('Delete this appointment?');">
+                                        <input type="hidden" name="delete_id" value="<?= $a['appointment_id'] ?>">
+                                        <button type="submit" name="delete" class="btn btn-custom-delete btn-sm">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
 
-                        <!-- Edit Modal -->
-                        <div class="modal fade" id="editModal<?= $a['id'] ?>" tabindex="-1" aria-labelledby="editModalLabel<?= $a['id'] ?>" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <form method="post" class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="editModalLabel<?= $a['id'] ?>">Edit Appointment</h5>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label>Patient Name</label>
-                                            <input type="text" name="patient_name" class="form-control" value="<?= htmlspecialchars($a['patient_name']) ?>" required>
+                            <!-- Edit Modal -->
+                            <div class="modal fade" id="editModal<?= $a['appointment_id'] ?>" tabindex="-1" aria-labelledby="editModalLabel<?= $a['appointment_id'] ?>" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <form method="post" action="appoint_crud.php" class="modal-content">
+                                        <input type="hidden" name="id" value="<?= $a['appointment_id'] ?>">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="editModalLabel<?= $a['appointment_id'] ?>">Edit Appointment</h5>
                                         </div>
-                                        <div class="mb-3">
-                                            <label>Date</label>
-                                            <input type="date" name="date" class="form-control" value="<?= $a['date'] ?>" required>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label>Patient Name</label>
+                                                <input type="text" name="patient_name" class="form-control" value="<?= htmlspecialchars($a['patient_name']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>Date</label>
+                                                <input type="date" name="date" class="form-control" value="<?= htmlspecialchars($a['date']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>Time</label>
+                                                <input type="time" name="time" class="form-control" value="<?= htmlspecialchars($a['time']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>Doctor</label>
+                                                <input type="text" name="doctor" class="form-control" value="<?= htmlspecialchars($a['doctor']) ?>" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label>Reason</label>
+                                                <input type="text" name="reason" class="form-control" value="<?= htmlspecialchars($a['reason']) ?>" required>
+                                            </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label>Time</label>
-                                            <input type="time" name="time" class="form-control" value="<?= $a['time'] ?>" required>
+                                        <div class="modal-footer">
+                                            <button type="submit" name="update" class="btn btn-secondary">Save changes</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                         </div>
-                                        <div class="mb-3">
-                                            <label>Doctor</label>
-                                            <input type="text" name="doctor" class="form-control" value="<?= htmlspecialchars($a['doctor']) ?>" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label>Reason</label>
-                                            <input type="text" name="reason" class="form-control" value="<?= htmlspecialchars($a['reason']) ?>" required>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="submit" name="update" class="btn btn-secondary">Save changes</button>
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             </div>
-                        </div>
-                        <!-- End Modal -->
-                    </td>
-                </tr>
-                <?php endforeach; ?>
+                            <!-- End Modal -->
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="7" class="text-center">No appointments found.</td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -190,7 +200,7 @@ if (isset($_POST['logout'])) {
 <!-- Add Appointment Modal -->
 <div class="modal fade" id="addAppointmentModal" tabindex="-1" aria-labelledby="addAppointmentModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <form method="post" class="modal-content">
+        <form method="post" action="appoint_crud.php" class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addAppointmentModalLabel">Add Appointment</h5>
             </div>
