@@ -88,6 +88,129 @@ END$$
 
 DELIMITER ;
 
+DELIMITER $$
+
+CREATE PROCEDURE add_appointment(
+    IN patient_name VARCHAR(255),
+    IN date DATE,
+    IN time TIME,
+    IN doctor VARCHAR(255),
+    IN reason VARCHAR(255)
+)
+BEGIN
+    INSERT INTO appointments (patient_name, date, time, doctor, reason)
+    VALUES (patient_name, date, time, doctor, reason);
+END $$
+
+DELIMITER ;
+DELIMITER //
+
+CREATE PROCEDURE add_patient (
+    IN p_name VARCHAR(255),
+    IN p_gender VARCHAR(10),
+    IN p_address VARCHAR(255),
+    IN p_parents VARCHAR(255),
+    IN p_dob DATE,
+    IN p_weight DECIMAL(5,2),
+    IN p_height DECIMAL(5,2),
+    IN p_blood_type VARCHAR(5),
+    IN p_reason VARCHAR(255)
+)
+BEGIN
+    -- Insert a new patient into the `patients` table
+    INSERT INTO patients (
+        name,
+        gender,
+        address,
+        parents,
+        dob,
+        weight,
+        height,
+        blood_type,
+        reason
+    ) VALUES (
+        p_name,
+        p_gender,
+        p_address,
+        p_parents,
+        p_dob,
+        p_weight,
+        p_height,
+        p_blood_type,
+        p_reason
+    );
+END //
+
+DELIMITER ;
+
+-- Stored Procedure for Adding Household
+DELIMITER $$
+
+CREATE PROCEDURE add_household(
+    IN p_head_name VARCHAR(255),
+    IN p_purok VARCHAR(255),
+    IN p_nic_number VARCHAR(20),
+    IN p_num_members INT
+)
+BEGIN
+    INSERT INTO households (head_name, purok, nic_number, num_members)
+    VALUES (p_head_name, p_purok, p_nic_number, p_num_members);
+    SELECT LAST_INSERT_ID() AS household_id;
+END $$
+
+DELIMITER ;
+
+-- Stored Procedure for Adding Household Members
+DELIMITER $$
+
+CREATE PROCEDURE add_household_members(
+    IN p_household_id INT,
+    IN p_member_name VARCHAR(255),
+    IN p_relation VARCHAR(255),
+    IN p_age INT,  -- Changed to INT for Age
+    IN p_sex ENUM('Male', 'Female', 'Other')  -- Changed to ENUM for sex
+)
+BEGIN
+    INSERT INTO household_members (household_id, member_name, relation, age, sex)
+    VALUES (p_household_id, p_member_name, p_relation, p_age, p_sex);
+END $$
+
+DELIMITER ;
+
+-- Stored Procedure for Adding Medical Information
+DELIMITER $$
+
+CREATE PROCEDURE add_medical_information(
+    IN p_household_id INT,
+    IN p_medical_condition TEXT,
+    IN p_allergies TEXT
+)
+BEGIN
+    INSERT INTO medical_information (household_id, medical_condition, allergies)
+    VALUES (p_household_id, p_medical_condition, p_allergies);
+END $$
+
+DELIMITER ;
+
+-- Stored Procedure for Adding Emergency Contact
+DELIMITER $$
+
+CREATE PROCEDURE add_emergency_contact(
+    IN p_household_id INT,
+    IN p_emergency_contact_name VARCHAR(255),
+    IN p_emergency_contact_number VARCHAR(15),
+    IN p_emergency_contact_relation VARCHAR(100)
+)
+BEGIN
+    INSERT INTO emergency_contacts (household_id, emergency_contact_name, emergency_contact_number, emergency_contact_relation)
+    VALUES (p_household_id, p_emergency_contact_name, p_emergency_contact_number, p_emergency_contact_relation);
+END $$
+
+DELIMITER ;
+
+
+
+
 --
 -- Table structure for table `users`
 --
@@ -132,22 +255,27 @@ COMMIT;
 -- Table structure for table `appointments`
 --
 
-CREATE TABLE `appointments` (
-  `appointment_id` int(11) NOT NULL,
-  `patient_id` int(11) DEFAULT NULL,
-  `worker_id` int(11) DEFAULT NULL,
-  `appointment_date` datetime DEFAULT NULL,
-  `purpose` text DEFAULT NULL,
-  `status` enum('Scheduled','Completed','Cancelled') DEFAULT 'Scheduled'
+CREATE TABLE appointments (
+  appointment_id INT(11) NOT NULL AUTO_INCREMENT,
+  patient_name VARCHAR(255) NOT NULL,
+  date DATE NOT NULL,
+  time TIME NOT NULL,
+  doctor VARCHAR(255) NOT NULL,
+  reason TEXT NOT NULL,
+  PRIMARY KEY (appointment_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
 
 --
 -- Dumping data for table `appointments`
 --
 
-INSERT INTO `appointments` (`appointment_id`, `patient_id`, `worker_id`, `appointment_date`, `purpose`, `status`) VALUES
-(1, 1, 1, '2025-04-15 09:00:00', 'Routine Check-up', 'Scheduled'),
-(2, 4, 2, '2025-04-16 10:30:00', 'Vaccination', 'Scheduled');
+INSERT INTO appointments (patient_name, date, time, doctor, reason) VALUES
+('John Doe', '2025-04-15', '09:00:00', 'Dr. Smith', 'Routine Check-up'),
+('Jane Doe', '2025-04-16', '10:30:00', 'Dr. Lee', 'Vaccination'),
+('Alice Johnson', '2025-04-17', '11:00:00', 'Dr. Brown', 'Consultation for fever'),
+('Bob Martin', '2025-04-18', '08:30:00', 'Dr. Green', 'Follow-up check-up');
 
 -- --------------------------------------------------------
 
@@ -220,26 +348,70 @@ INSERT INTO `healthworkers` (`worker_id`, `full_name`, `role`, `contact_number`,
 
 -- --------------------------------------------------------
 
---
--- Table structure for table `households`
---
+-- Create Household Table
+CREATE TABLE households (
+    household_id INT AUTO_INCREMENT PRIMARY KEY,
+    head_name VARCHAR(255) NOT NULL,
+    purok VARCHAR(255) NOT NULL,
+    nic_number VARCHAR(20) NOT NULL,
+    num_members INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+);
 
-CREATE TABLE `households` (
-  `household_id` int(11) NOT NULL,
-  `household_head` varchar(100) DEFAULT NULL,
-  `address` text DEFAULT NULL,
-  `barangay` varchar(100) DEFAULT NULL,
-  `total_members` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- Create Medical Information Table (for medical_condition and allergies)
+CREATE TABLE medical_information (
+    medical_id INT AUTO_INCREMENT PRIMARY KEY,
+    household_id INT,
+    medical_condition TEXT,
+    allergies TEXT,
+    FOREIGN KEY (household_id) REFERENCES households(household_id) ON DELETE CASCADE
+);
 
---
--- Dumping data for table `households`
---
+-- Create Household Members Table
+CREATE TABLE household_members (
+    member_id INT AUTO_INCREMENT PRIMARY KEY,
+    household_id INT,
+    member_name VARCHAR(255),
+    relation VARCHAR(255),
+    age INT,
+    sex ENUM('Male', 'Female', 'Other'),
+    FOREIGN KEY (household_id) REFERENCES households(household_id) ON DELETE CASCADE
+);
 
-INSERT INTO `households` (`household_id`, `household_head`, `address`, `barangay`, `total_members`, `created_at`) VALUES
-(1, 'Juan Dela Cruz', '123 Sampaguita St.', 'Barangay Malinis', 4, '2025-04-11 12:46:08'),
-(2, 'Maria Santos', '456 Rosal St.', 'Barangay Malinis', 3, '2025-04-11 12:46:08');
+-- Create Emergency Contacts Table
+CREATE TABLE emergency_contacts (
+    emergency_id INT AUTO_INCREMENT PRIMARY KEY,
+    household_id INT,
+    emergency_contact_name VARCHAR(255),
+    emergency_contact_number VARCHAR(15),
+    emergency_contact_relation VARCHAR(100),
+    FOREIGN KEY (household_id) REFERENCES households(household_id) ON DELETE CASCADE
+);
+
+-- Insert Example Data into Household Table
+INSERT INTO households (head_name, purok, nic_number, num_members)
+VALUES
+('John Doe', 'Purok 1', '1234567890', 5);
+
+-- Insert Example Data into Medical Information Table
+-- You must ensure that the household_id inserted into 'households' exists before this
+INSERT INTO medical_information (household_id, medical_condition, allergies)
+VALUES (1, 'Hypertension, Asthma', 'Pollen, Dust');
+
+-- Insert Example Data into Household Members Table
+-- Ensure the household_id (1) is present in households before inserting
+INSERT INTO household_members (household_id, member_name, relation, age , sex)
+VALUES
+(1, 'John John', 'Spouse', 22, 'Male');
+
+-- Insert Example Data into Emergency Contacts Table
+-- Ensure household_id (1) exists in the households table
+INSERT INTO emergency_contacts (household_id, emergency_contact_name, emergency_contact_number, emergency_contact_relation)
+VALUES
+(1, 'Sarah Doe', '09123456789', 'Sister');
+
+
+
 
 -- --------------------------------------------------------
 
@@ -248,26 +420,27 @@ INSERT INTO `households` (`household_id`, `household_head`, `address`, `barangay
 --
 
 CREATE TABLE `patients` (
-  `patient_id` int(11) NOT NULL,
+  `patient_id` int(11) NOT NULL AUTO_INCREMENT,
   `household_id` int(11) DEFAULT NULL,
-  `full_name` varchar(100) DEFAULT NULL,
-  `gender` enum('Male','Female','Other') DEFAULT NULL,
-  `date_of_birth` date DEFAULT NULL,
-  `contact_number` varchar(15) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL,
-  `is_household_head` tinyint(1) DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `name` VARCHAR(100) NOT NULL,
+  `gender` ENUM('Male', 'Female', 'Other') NOT NULL,
+  `address` VARCHAR(255) DEFAULT NULL,
+  `parents` VARCHAR(255) DEFAULT NULL,
+  `dob` DATE NOT NULL,  -- Date of Birth
+  `weight` DECIMAL(5,2) DEFAULT NULL,  -- Weight in kilograms
+  `height` DECIMAL(5,2) DEFAULT NULL,  -- Height in meters
+  `blood_type` ENUM('A', 'B', 'AB', 'O', 'O+', 'Other') DEFAULT NULL,
+  `reason` TEXT DEFAULT NULL,  -- Reason for the visit or notes
+  `is_household_head` tinyint(1) DEFAULT 0,
+  PRIMARY KEY (`patient_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
---
 -- Dumping data for table `patients`
---
-
-INSERT INTO `patients` (`patient_id`, `household_id`, `full_name`, `gender`, `date_of_birth`, `contact_number`, `email`, `is_household_head`) VALUES
-(1, 1, 'Juan Dela Cruz', 'Male', '1985-06-15', '09171234567', 'juan@example.com', 1),
-(2, 1, 'Ana Dela Cruz', 'Female', '1987-10-20', '09181234567', 'ana@example.com', 0),
-(3, 1, 'Carlos Dela Cruz', 'Male', '2010-08-05', NULL, NULL, 0),
-(4, 2, 'Maria Santos', 'Female', '1990-12-12', '09193456789', 'maria@example.com', 1),
-(5, 2, 'Jessa Santos', 'Female', '2015-04-03', NULL, NULL, 0);
+INSERT INTO `patients` (`household_id`, `name`, `gender`, `address`, `parents`, `dob`, `weight`, `height`, `blood_type`, `reason`, `is_household_head`) VALUES
+(1, 'Juan Dela Cruz', 'Male', '123 Street, City', 'Maria Dela Cruz, Juan Dela Cruz Sr.', '1985-06-15', 70.5, 1.75, 'O', 'General checkup', 1),
+(1, 'Ana Dela Cruz', 'Female', '456 Avenue, City', 'Jose Dela Cruz, Maria Dela Cruz', '1987-10-20', 55.3, 1.60, 'A', 'Routine exam', 0),
+(1, 'Carlos Dela Cruz', 'Male', '789 Road, City', 'Maria Dela Cruz', '2010-08-05', 30.0, 1.40, 'B', 'Vaccination', 0),
+(2, 'Maria Santos', 'Female', '101 Park, City', 'Jose Santos, Laura Santos', '1990-12-12', 62.0, 1.65, 'AB', 'Consultation', 1);
 
 --
 -- Indexes for dumped tables
