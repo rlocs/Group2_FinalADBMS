@@ -25,6 +25,27 @@ SET time_zone = "+00:00";
 CREATE DATABASE IF NOT EXISTS `db_healthcenter`;
 USE `db_healthcenter`;
 
+-- interventions table
+CREATE TABLE interventions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    intervention TEXT,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(appointment_id) ON DELETE CASCADE
+);
+
+-- View inrtevention
+CREATE VIEW view_patient_intervention AS
+SELECT 
+    a.appointment_id AS id,
+    CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+    CONCAT('Dr. ', u.username) AS doctor,
+    a.reason,
+    i.intervention
+FROM appointments a
+JOIN patients p ON a.patient_id = p.patient_id
+JOIN users u ON a.user_id = u.user_id
+LEFT JOIN interventions i ON a.appointment_id = i.appointment_id;
+
 DELIMITER $$
 
 CREATE PROCEDURE GetPatientHistory(IN patientID INT)
