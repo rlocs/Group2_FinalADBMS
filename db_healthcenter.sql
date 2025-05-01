@@ -206,14 +206,59 @@ BEGIN
     VALUES (p_household_id, p_emergency_contact_name, p_emergency_contact_number, p_emergency_contact_relation);
 END $$
 
-DELIMITER ;
+DELIMITER $$
 
+--Stored procedure for delete appointment
 
+DELIMITER $$ 
+CREATE PROCEDURE delete_appointment (
+  IN appt_id INT
+)
+BEGIN
+DELETE FROM appointments WHERE appointment_id = appt_id;
+END $$
+DELIMITER;
 
+--Stored Procedure for delete patient--
+
+DELIMITER $$
+CREATE PROCEDURE delete_patient(
+    IN pat_id INT
+)
+BEGIN
+DELETE FROM patients WHERE patient_id = pat_id;
+END $$
+DELIMITER;
+
+--Stored Procedure for delete household-- 
+
+DELIMITER $$
+CREATE PROCEDURE delete_households(
+    IN hh_id INT
+)
+BEGIN 
+DELETE FROM households WHERE household_id = hh_id;
+END $$
+DELIMITER;
 
 --
 -- Table structure for table `users`
 --
+
+-- Stored Procedure for showing appointment table--
+
+-- Appointment Table View --
+
+DELIMITER $$
+
+CREATE PROCEDURE show_appointment_list()
+BEGIN
+    SELECT * FROM appointments;
+END $$
+
+DELIMITER ;
+
+
 
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
@@ -355,7 +400,7 @@ CREATE TABLE households (
     purok VARCHAR(255) NOT NULL,
     nic_number VARCHAR(20) NOT NULL,
     num_members INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create Medical Information Table (for medical_condition and allergies)
@@ -409,8 +454,6 @@ VALUES
 INSERT INTO emergency_contacts (household_id, emergency_contact_name, emergency_contact_number, emergency_contact_relation)
 VALUES
 (1, 'Sarah Doe', '09123456789', 'Sister');
-
-
 
 
 -- --------------------------------------------------------
@@ -1656,5 +1699,4 @@ SELECT
     sa.details
 FROM security_audit_log sa
 JOIN users u ON sa.user_id = u.id;
-
 
