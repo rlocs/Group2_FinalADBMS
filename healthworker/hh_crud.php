@@ -105,4 +105,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_household'])) {
         echo "Error: " . $e->getMessage();
     }
 }
+
+//Delete Household
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
+    $household_id = $_POST['delete_id'];
+
+    try {
+        $database = new Database();
+        $conn = $database->getConnection();
+
+        $sql = "CALL delete_households(:household_id)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':household_id', $household_id, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            header("Location: hhprofile.php");
+            exit;
+        } else {
+            echo "Error: Unable to delete household member.";
+        }
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
+    }
+}
 ?>

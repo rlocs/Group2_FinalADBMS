@@ -7,7 +7,7 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
     exit;
 }
 
-// appoint_add
+// Add patient
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $gender = $_POST['gender'];
@@ -48,5 +48,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
+//Delete Patient
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
+    $patient_id = $_POST['delete_id'];
+
+    try {
+        $database = new Database();
+        $conn = $database->getConnection();
+
+        $sql = "CALL delete_patient(:patient_id)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':patient_id', $patient_id, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            header("Location: patient.php");
+            exit;
+        } else {
+            echo "Error: Unable to delete patient.";
+        }
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
+    }
+}
 // your work here
 ?>

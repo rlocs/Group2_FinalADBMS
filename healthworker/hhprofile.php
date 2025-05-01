@@ -258,7 +258,7 @@ $conn = $database->getConnection();
                                 <button class="btn btn-custom-edit btn-sm" data-bs-toggle="modal" data-bs-target="#editHouseholdModal<?= $h['household_id'] ?>">Edit</button>
 
                                 <!-- Delete Button -->
-                                <form method="post" class="d-inline" onsubmit="return confirm('Delete this household profile?');">
+                                <form method="post" action="hh_crud.php" class="d-inline" onsubmit="return confirm('Delete this household profile?');">
                                     <input type="hidden" name="delete_id" value="<?= $h['household_id'] ?>">
                                     <button type="submit" name="delete" class="btn btn-custom-delete btn-sm">Delete</button>
                                 </form>
