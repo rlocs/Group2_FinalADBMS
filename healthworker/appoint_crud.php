@@ -7,6 +7,8 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
     exit;
 }
 
+//Adding Appoointment
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $patient_name = $_POST['patient_name'];
     $date = $_POST['date'];
@@ -39,5 +41,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
+// Deleting Appointment
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
+    $appointment_id = $_POST['delete_id'];
+
+    try {
+        $database = new Database();
+        $conn = $database->getConnection();
+
+        $sql = "CALL delete_appointment(:appointment_id)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':appointment_id', $appointment_id, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            header("Location: appointment.php");
+            exit;
+        } else {
+            echo "Error: Unable to delete appointment.";
+        }
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
+    }
+}
 // your work here
 ?>

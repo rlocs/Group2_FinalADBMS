@@ -120,7 +120,7 @@ $conn = $database->getConnection();
             </thead>
             <tbody id="appointmentTableBody">
                 <?php
-                    $sql = "SELECT * FROM appointments;";
+                    $sql = "CALL show_appointment_list();";
                     $stmt = $conn->prepare($sql);
                     $stmt->execute();
                     $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -141,7 +141,7 @@ $conn = $database->getConnection();
                                         Edit
                                     </button>
                                     <!-- Delete Form -->
-                                    <form method="post" action="delete.php" class="d-inline" onsubmit="return confirm('Delete this appointment?');">
+                                    <form method="post" action="appoint_crud.php" class="d-inline" onsubmit="return confirm('Delete this appointment?');">
                                         <input type="hidden" name="delete_id" value="<?= $a['appointment_id'] ?>">
                                         <button type="submit" name="delete" class="btn btn-custom-delete btn-sm">Delete</button>
                                     </form>
