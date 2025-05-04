@@ -1,5 +1,4 @@
 <?php
-include 'dbConnection.php'; // adjust path as needed
 session_start();
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
     header("Location: ../login.php");
@@ -89,8 +88,6 @@ $email = $username . "@gmail.com"; // Dummy email
         </div>
     </div>
 </div>
-
-
 
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
