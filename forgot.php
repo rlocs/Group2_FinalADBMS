@@ -5,12 +5,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <meta name="description" content="Reset your password securely through our health center system. Enter your email to receive password recovery instructions.">
+    <title>Forgot Password</title>
 
     <!-- Boxicons for icons -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-
-    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" crossorigin="anonymous"></script>
@@ -46,11 +45,11 @@
             justify-content: center;
             align-items: center;
             border: 1px solid #ccc;
-            background-color: white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
+            background-color: rgb(203, 202, 209);
+            box-shadow: 0 6px 8px rgba(22, 22, 22, 0.1);
+            border-radius: 15px;
             flex-direction: column;
-            padding: 30px;
+            padding: 27.9px;
         }
 
         .square img {
@@ -70,7 +69,7 @@
             top: 50%;
             left: 10px;
             transform: translateY(-50%);
-            color: #999;
+            color: #444;
         }
 
         .form-control {
@@ -110,7 +109,7 @@
 
         .forgot-password a {
             font-size: 14px;
-            color: #007bff;
+            color: #0040aa;
             text-decoration: none;
         }
 
@@ -123,11 +122,11 @@
 <body>
     <div class="container">
         <div class="square">
-            <img src="barangay health center of lipa logo.png" alt="Health Center Logo">
+            <img src="sanpedro.png" alt="Health Center Logo">
         </div>
         <div class="square">
             <div class="login-title">Forgot Password</div>
-            <form action="login.php" method="POST">
+            <form action="b-login.php" method="POST">
                 <div class="form-group">
                     <i class='bx bxs-user'></i>
                     <input type="text" class="form-control" name="username" id="username" placeholder="E-mail Address" required>
@@ -143,7 +142,7 @@
                     minlength = "8" maxlength="16" placeholder="Confirm Password" required>
                 </div>
                 <div class="forgot-password">
-                    <a href="index.php">Back to Login</a>
+                    <a href="login.php">Back to Login</a>
                 </div>
                 <button type="submit" class="btn-login">Confirm</button>
             </form>

@@ -1,18 +1,32 @@
 <?php
-$host = 'localhost';
-$dbname = 'dbhealth.sql';
-$username = 'root'; 
-$password = '';     
+class Database {
+    private $host = 'localhost';
+    private $db_name = 'db_healthcenter';
+    private $username = 'root';
+    private $password = '';
+    private $conn;
 
-try {
-    $dsn = "mysql:host=$host;dbname=$dbname";
-    $pdo = new PDO($dsn, $username, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-    ]);
-} catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    public function __construct() {
+        $this->connect();
+    }
+
+    private function connect() {
+        try {
+            $this->conn = new PDO(
+                "mysql:host={$this->host};dbname={$this->db_name};charset=utf8mb4",
+                $this->username,
+                $this->password
+            );
+            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            // Hide sensitive error from users, log it instead
+            error_log("DB Connection error: " . $e->getMessage());
+            die("Sorry, we are having technical issues.");
+        }
+    }
+
+    public function getConnection() {
+        return $this->conn;
+    }
 }
-
-return $pdo;
 ?>
