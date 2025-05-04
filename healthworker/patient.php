@@ -212,7 +212,7 @@ $conn = $database->getConnection();
                             <button class="btn btn-custom-edit btn-sm" data-bs-toggle="modal" data-bs-target="#editModal<?= $p['patient_id'] ?>">Edit</button>
 
                             <!-- Delete Form -->
-                            <form method="post" action="delete_patient.php" class="d-inline" onsubmit="return confirm('Delete this patient?');">
+                            <form method="post" action="patient_crud.php" class="d-inline" onsubmit="return confirm('Delete this patient?');">
                                 <input type="hidden" name="delete_id" value="<?= $p['patient_id'] ?>">
                                 <button type="submit" name="delete" class="btn btn-custom-delete btn-sm">Delete</button>
                             </form>
