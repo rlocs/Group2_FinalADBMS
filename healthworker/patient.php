@@ -37,7 +37,7 @@ $conn = $database->getConnection();
     </head>
     <body>
 
-    <!-- Navbar -->
+   <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container-fluid">
             <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
@@ -55,9 +55,26 @@ $conn = $database->getConnection();
                     <li class="nav-item">
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'hhprofile.php' ? 'active' : ''; ?>" href="hhprofile.php">Household Profiles</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'medications.php' ? 'active' : ''; ?>" href="medications.php">Medications</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'barangay.php' ? 'active' : ''; ?>" href="barangay.php">Brgy. Map</a>
+                    </li>
+                      <!-- More dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle 
+                            <?php echo in_array(basename($_SERVER['PHP_SELF']), ['faqs.php', 'aboutus.php']) ? 'active' : ''; ?>" 
+                            href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            More
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="faqs.php">FAQs</a></li>
+                            <li><a class="dropdown-item" href="aboutus.php">About Us</a></li>
+                        </ul>
+                    </li>
                 </ul>
-
-                    <!-- USER INFO WRAPPER -->
+                  <!-- USER INFO WRAPPER -->
                     <div class="user-info">
                         <!-- DATE -->
                         <div class="user-date">
@@ -69,8 +86,7 @@ $conn = $database->getConnection();
                                 ?>
                             </p>
                         </div>
-
-                        <!-- USERNAME -->
+                          <!-- USERNAME -->
                         <div class="user-name">
                             <a href="profile.php">
                                 <strong><?php echo htmlspecialchars($username); ?></strong>
@@ -85,7 +101,6 @@ $conn = $database->getConnection();
             </div>
         </div>
     </nav>
-
     <!-- Content Section -->
     <div class="container top-gap-after-navbar">
         <div class="d-flex justify-content-between align-items-center mb-2" style="margin: 0 26px;">
@@ -101,15 +116,13 @@ $conn = $database->getConnection();
             <form method="get" class="d-flex" style="max-width: 350px;">
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" name="search" class="form-control" placeholder="Search by Name" value="<?= htmlspecialchars($search) ?>">
+                    <input type="text" id="searchPatient" name="search" class="form-control" placeholder="Search by Name" value="<?= htmlspecialchars($search) ?>">
                     <button type="submit" class="btn btn-search">Search</button>
                 </div>
             </form>
         </div>
     </div>
-
-
-        <div class="modal fade" id="addPatientModal" tabindex="-1" aria-labelledby="addPatientModalLabel" aria-hidden="true">
+<div class="modal fade" id="addPatientModal" tabindex="-1" aria-labelledby="addPatientModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <form method="post" action="patient_crud.php" class="modal-content">
                     <div class="modal-header">
@@ -121,13 +134,13 @@ $conn = $database->getConnection();
                             <label>Name</label>
                             <input type="text" name="name" class="form-control" required>
                         </div>
-                        <div class="mb-3">
-                            <label>Age</label>
-                            <input type="number" name="age" class="form-control" required>
-                        </div>
+<!-- Removed Age input field as age is calculated from DOB -->
                         <div class="mb-3">
                             <label>Gender</label>
-                            <input type="text" name="gender" class="form-control" required>
+                            <select name="gender" class="form-select" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label>Address</label>
@@ -142,11 +155,11 @@ $conn = $database->getConnection();
                             <input type="date" name="dob" class="form-control" required>
                         </div>
                         <div class="mb-3">
-                            <label>Weight</label>
+                            <label>Weight(kg)</label>
                             <input type="text" name="weight" class="form-control" required>
                         </div>
                         <div class="mb-3">
-                            <label>Height</label>
+                            <label>Height(cm)</label>
                             <input type="text" name="height" class="form-control" required>
                         </div>
                         <div class="mb-3">
@@ -175,13 +188,13 @@ $conn = $database->getConnection();
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
-                    <th>Age</th>
+<!-- Removed Age column header as age is calculated from DOB -->
                     <th>Gender</th>
                     <th>Address</th>
                     <th>Parents</th>
                     <th>DOB</th>
-                    <th>Weight</th>
-                    <th>Height</th>
+                    <th>Weight(kg)</th>
+                    <th>Height(cm)</th>
                     <th>Blood Type</th>
                     <th>Reason</th>
                     <th>Actions</th>
@@ -190,15 +203,46 @@ $conn = $database->getConnection();
             <tbody id="patientTableBody">
                 <?php
                 try {
-                    $query = "SELECT *, TIMESTAMPDIFF(YEAR, dob, CURDATE()) AS age FROM patients"; 
-                    $stmt = $conn->prepare($query);
-                    $stmt->execute();
+if ($search) {
+    // Count total matching records
+    $count_stmt = $conn->prepare("SELECT COUNT(*) FROM patients WHERE name LIKE CONCAT('%', :search_term, '%')");
+    $count_stmt->bindValue(':search_term', $search);
+    $count_stmt->execute();
+    $total_patients = $count_stmt->fetchColumn();
 
-                    while ($p = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
+    // Fetch paginated results
+    $stmt = $conn->prepare("SELECT * FROM patients WHERE name LIKE CONCAT('%', :search_term, '%') ORDER BY patient_id ASC LIMIT :limit OFFSET :offset");
+    $stmt->bindValue(':search_term', $search);
+    $stmt->bindValue(':limit', $records_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->closeCursor();
+} else {
+    // Count total records
+    $count_stmt = $conn->query("SELECT COUNT(*) FROM patients");
+    $total_patients = $count_stmt->fetchColumn();
+
+    // Fetch paginated results
+    $stmt = $conn->prepare("SELECT * FROM patients ORDER BY patient_id ASC LIMIT :limit OFFSET :offset");
+    $stmt->bindValue(':limit', $records_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+$counter = $offset + 1;
+function getRandomId(&$used_ids) {
+    do {
+        $rand_id = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+    } while (in_array($rand_id, $used_ids));
+    $used_ids[] = $rand_id;
+    return $rand_id;
+}
+foreach ($patients as $p): ?>
                     <tr>
                         <td><?= $p['patient_id'] ?></td>
                         <td><?= htmlspecialchars($p['name']) ?></td>
-                        <td><?= htmlspecialchars($p['age']) ?></td>
                         <td><?= htmlspecialchars($p['gender']) ?></td>
                         <td><?= htmlspecialchars($p['address']) ?></td>
                         <td><?= htmlspecialchars($p['parents']) ?></td>
@@ -222,22 +266,22 @@ $conn = $database->getConnection();
                                 <div class="modal-dialog">
                                     <form method="post" action="patient_crud.php" class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title" id="editModalLabel<?= $p['id'] ?>">Edit Patient</h5>
+                                            <h5 class="modal-title" id="editModalLabel<?= $p['patient_id'] ?>">Edit Patient</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                                            <input type="hidden" name="patient_id" value="<?= $p['patient_id'] ?>">
                                             <div class="mb-3">
                                                 <label>Name</label>
                                                 <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($p['name']) ?>" required>
                                             </div>
-                                            <div class="mb-3">
-                                                <label>Age</label>
-                                                <input type="number" name="age" class="form-control" value="<?= htmlspecialchars($p['age']) ?>" required>
-                                            </div>
+                                            <!-- Removed Age input field as age is calculated from DOB -->
                                             <div class="mb-3">
                                                 <label>Gender</label>
-                                                <input type="text" name="gender" class="form-control" value="<?= htmlspecialchars($p['gender']) ?>" required>
+                                                <select name="gender" class="form-select" required>
+                                                    <option value="Male" <?= ($p['gender'] === 'Male') ? 'selected' : '' ?>>Male</option>
+                                                    <option value="Female" <?= ($p['gender'] === 'Female') ? 'selected' : '' ?>>Female</option>
+                                                </select>
                                             </div>
                                             <div class="mb-3">
                                                 <label>Address</label>
@@ -252,11 +296,11 @@ $conn = $database->getConnection();
                                                 <input type="date" name="dob" class="form-control" value="<?= htmlspecialchars($p['dob']) ?>" required>
                                             </div>
                                             <div class="mb-3">
-                                                <label>Weight</label>
+                                                <label>Weight(kg)</label>
                                                 <input type="text" name="weight" class="form-control" value="<?= htmlspecialchars($p['weight']) ?>" required>
                                             </div>
                                             <div class="mb-3">
-                                                <label>Height</label>
+                                                <label>Height(cm)</label>
                                                 <input type="text" name="height" class="form-control" value="<?= htmlspecialchars($p['height']) ?>" required>
                                             </div>
                                             <div class="mb-3">
@@ -277,7 +321,7 @@ $conn = $database->getConnection();
                             </div>
                         </td>
                     </tr>
-                    <?php endwhile; ?>
+                    <?php endforeach; ?>
                 <?php
                 } catch (PDOException $e) {
                     echo "Error fetching patients: " . $e->getMessage();
@@ -285,26 +329,41 @@ $conn = $database->getConnection();
                 ?>
             </tbody>
         </table>
+
+        <!-- Pagination -->
+        <?php if ($total_patients > $records_per_page): ?>
+        <nav aria-label="Page navigation example" class="mt-3" style="margin-left: 26px;">
+<ul class="pagination justify-content-start">
+            <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+              <a class="page-link" href="?search=<?= urlencode($search) ?>&page=<?= $page - 1 ?>" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+                <span class="sr-only">Previous</span>
+              </a>
+            </li>
+            <?php
+            $total_pages = ceil($total_patients / $records_per_page);
+            for ($i = 1; $i <= $total_pages; $i++): ?>
+              <li class="page-item <?= ($i == $page) ? 'active' : '' ?>">
+                <a class="page-link" href="?search=<?= urlencode($search) ?>&page=<?= $i ?>"><?= $i ?></a>
+              </li>
+            <?php endfor; ?>
+            <li class="page-item <?= ($page >= $total_pages) ? 'disabled' : '' ?>">
+              <a class="page-link" href="?search=<?= urlencode($search) ?>&page=<?= $page + 1 ?>" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+                <span class="sr-only">Next</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <?php endif; ?>
     </div>
 </div>
 
-<!-- Intervention Table -->
-<div class="table-container">
-    <div class="container mt-5">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <!-- Search Form for Interventions -->
-            <form method="get" class="d-flex" style="max-width: 350px;">
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" name="intervention_search" class="form-control" placeholder="Search by Patient Name or Doctor" value="<?= htmlspecialchars($interventionSearch) ?>">
-                    <button type="submit" class="btn btn-search">Search</button>
-                </div>
-            </form>
-        </div>
 
+        <div class="table-container">
+        <div class="table-responsive mt-4">
         <h4 class="fw-bold intervention-heading">Intervention</h4>
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover bg-white table-intervention">
+        <table class="table table-bordered table-hover bg-white table-intervention">
                 <thead class="table-light">
                     <tr>
                         <th>Intervention ID</th>
@@ -315,81 +374,97 @@ $conn = $database->getConnection();
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="interventionTableBody">
-                    <?php
-                    try {
-                        if (!empty($interventionSearch)) {
-                            $stmt = $conn->prepare("SELECT * FROM view_patient_intervention WHERE patient_name LIKE :search OR doctor LIKE :search ORDER BY id DESC LIMIT :offset, :limit");
-                            $stmt->bindValue(':search', '%' . $interventionSearch . '%', PDO::PARAM_STR);
-                        } else {
-                            $stmt = $conn->prepare("SELECT * FROM view_patient_intervention ORDER BY id DESC LIMIT :offset, :limit");
-                        }
-                        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-                        $stmt->bindValue(':limit', $recordsPerPage, PDO::PARAM_INT);
-                        $stmt->execute();
+        <tbody id="interventionTableBody">
+            <?php
+            $intervention_records_per_page = 4;
+            $intervention_page = isset($_GET['intervention_page']) && is_numeric($_GET['intervention_page']) ? (int)$_GET['intervention_page'] : 1;
+            $intervention_offset = ($intervention_page - 1) * $intervention_records_per_page;
 
-                        while ($i = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                            echo "<tr>
-                                <td>{$i['id']}</td>
-                                <td>" . htmlspecialchars($i['patient_name']) . "</td>
-                                <td>" . htmlspecialchars($i['doctor']) . "</td>
-                                <td>" . htmlspecialchars($i['reason']) . "</td>
-                                <td>" . htmlspecialchars($i['intervention']) . "</td>
-                                <td>
-                                    <button class='btn btn-custom-view btn-sm' data-bs-toggle='modal' data-bs-target='#viewModal{$i['id']}'>View</button>
+            try {
+                // Count total interventions
+                $count_stmt = $conn->query("SELECT COUNT(*) FROM interventions");
+                $total_interventions = $count_stmt->fetchColumn();
 
-                                    <div class='modal fade' id='viewModal{$i['id']}' tabindex='-1' aria-labelledby='viewModalLabel{$i['id']}' aria-hidden='true'>
-                                        <div class='modal-dialog modal-lg modal-dialog-centered'>
-                                            <div class='modal-content'>
-                                                <div class='modal-header'>
-                                                    <h5 class='modal-title' id='viewModalLabel{$i['id']}'>Intervention Details</h5>
-                                                    <button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button>
-                                                </div>
-                                                <div class='modal-body p-0' style='height: 400px;'>
-                                                    <iframe src='view.php?id={$i['id']}' frameborder='0' style='width:100%; height:100%; border:none;'></iframe>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>";
-                        }
-                    } catch (PDOException $e) {
-                        echo "<tr><td colspan='6'>Error loading interventions: " . $e->getMessage() . "</td></tr>";
-                    }
-                    ?>
+                // Fetch paginated interventions
+                $stmt = $conn->prepare("SELECT i.intervention_id, p.name AS patient_name, i.doctor, i.reason, i.intervention FROM interventions i JOIN patients p ON i.patient_id = p.patient_id ORDER BY i.created_at DESC LIMIT :limit OFFSET :offset");
+                $stmt->bindValue(':limit', $intervention_records_per_page, PDO::PARAM_INT);
+                $stmt->bindValue(':offset', $intervention_offset, PDO::PARAM_INT);
+                $stmt->execute();
+                $interventions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                echo "Error fetching interventions: " . $e->getMessage();
+                $interventions = [];
+                $total_interventions = 0;
+            }
+
+            foreach ($interventions as $i): ?>
+            <tr>
+                <td><?= $i['intervention_id'] ?></td>
+                <td><?= htmlspecialchars($i['patient_name']) ?></td>
+                <td><?= htmlspecialchars($i['doctor']) ?></td>
+                <td><?= htmlspecialchars($i['reason']) ?></td>
+                <td><?= htmlspecialchars($i['intervention']) ?></td>
+                <td>
+                    <!-- View Button -->
+                    <button class="btn btn-custom-view btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?= $i['intervention_id'] ?>">View</button>
+
+                <!-- View Modal -->
+                <div class="modal fade" id="viewModal<?= $i['intervention_id'] ?>" tabindex="-1" aria-labelledby="viewModalLabel<?= $i['intervention_id'] ?>" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="viewModalLabel<?= $i['intervention_id'] ?>">Intervention Details</h5>
+                                <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Patient Name:</strong> <?= htmlspecialchars($i['patient_name']) ?></p>
+                                <p><strong>Doctor:</strong> <?= htmlspecialchars($i['doctor']) ?></p>
+                                <p><strong>Reason:</strong> <?= htmlspecialchars($i['reason']) ?></p>
+                                <p><strong>Intervention:</strong> <?= htmlspecialchars($i['intervention']) ?></p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </td>
+            </tr>
+            <?php endforeach; ?>
                 </tbody>
             </table>
 
-            <!-- Pagination -->
-            <div class="d-flex justify-content-start">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination">
-                        <?php
-                        try {
-                            $countStmt = $conn->prepare("SELECT COUNT(*) FROM view_patient_intervention" . (!empty($interventionSearch) ? " WHERE patient_name LIKE :search OR doctor LIKE :search" : ""));
-                            if (!empty($interventionSearch)) {
-                                $countStmt->bindValue(':search', '%' . $interventionSearch . '%', PDO::PARAM_STR);
-                            }
-                            $countStmt->execute();
-                            $totalRecords = $countStmt->fetchColumn();
-                            $totalPages = ceil($totalRecords / $recordsPerPage);
-
-                            for ($i = 1; $i <= $totalPages; $i++) {
-                                $active = $i === $page ? 'active' : '';
-                                echo "<li class='page-item {$active}'><a class='page-link' href='?page={$i}&intervention_search=" . urlencode($interventionSearch) . "'>{$i}</a></li>";
-                            }
-                        } catch (PDOException $e) {
-                            echo "<li class='page-item disabled'><span class='page-link'>Error</span></li>";
-                        }
-                        ?>
-                    </ul>
-                </nav>
-            </div>
+            <!-- Pagination for interventions -->
+            <?php if ($total_interventions > $intervention_records_per_page): ?>
+            <nav aria-label="Intervention page navigation" class="mt-3" style="margin-left: 26px;">
+                <ul class="pagination justify-content-start">
+                    <li class="page-item <?= ($intervention_page <= 1) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="?search=<?= urlencode($search) ?>&page=<?= $page ?>&intervention_page=<?= $intervention_page - 1 ?>" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                    </li>
+                    <?php
+                    $total_intervention_pages = ceil($total_interventions / $intervention_records_per_page);
+                    for ($i = 1; $i <= $total_intervention_pages; $i++): ?>
+                        <li class="page-item <?= ($i == $intervention_page) ? 'active' : '' ?>">
+                            <a class="page-link" href="?search=<?= urlencode($search) ?>&page=<?= $page ?>&intervention_page=<?= $i ?>"><?= $i ?></a>
+                        </li>
+                    <?php endfor; ?>
+                    <li class="page-item <?= ($intervention_page >= $total_intervention_pages) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="?search=<?= urlencode($search) ?>&page=<?= $page ?>&intervention_page=<?= $intervention_page + 1 ?>" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <?php endif; ?>
         </div>
     </div>
-</div>
 
+    
+</div>
 <script>
 function showSection(id) {
     document.querySelectorAll('.content').forEach(div => {
