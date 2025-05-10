@@ -2,11 +2,6 @@
 require '../dbConnection.php';
 session_start();
 
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Nurse') {
-    header("Location: ../login.php");
-    exit;
-}
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['update']) && !isset($_POST['delete'])) {
     $name = $_POST['name'];
     $gender = $_POST['gender'];

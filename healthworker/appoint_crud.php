@@ -2,11 +2,6 @@
 require '../dbConnection.php';
 session_start();
 
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
-    header("Location: ../login.php");
-    exit;
-}
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
     $patient_name = $_POST['patient_name'];
     $date = $_POST['date'];

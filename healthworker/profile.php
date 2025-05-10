@@ -1,4 +1,5 @@
 <?php
+require '../dbConnection.php';
 session_start();
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
     header("Location: ../login.php");

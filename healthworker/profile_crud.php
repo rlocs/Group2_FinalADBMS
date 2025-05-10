@@ -2,12 +2,6 @@
 session_start();
 require_once '../dbConnection.php'; // Adjust path if needed
 
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
-    header("Location: ../login.php");
-    exit;
-}
-
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_account'])) {
     error_log("Create account POST request received.");
     $name = $_POST['name'];

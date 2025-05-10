@@ -2,11 +2,6 @@
 session_start();
 require_once '../dbConnection.php'; // Adjust path if needed
 
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Nurse') {
-    header("Location: ../login.php");
-    exit;
-}
-
 // Handle profile edit
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_profile'])) {
     $user_id = $_SESSION['user_id'];

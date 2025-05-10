@@ -26,12 +26,20 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $limit = $records_per_page;
     $offsetAjax = 0; // For live search, we can start from first page or implement pagination later
 
-    $stmt = $conn->prepare("CALL search_patients_paginated(:search_term, :limit, :offset)");
-    $stmt->bindValue(':search_term', $searchTerm);
-    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offsetAjax, PDO::PARAM_INT);
-    $stmt->execute();
-    $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($searchTerm) {
+        $stmt = $conn->prepare("SELECT * FROM patients WHERE name LIKE CONCAT('%', :search_term, '%') ORDER BY patient_id ASC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':search_term', $searchTerm);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offsetAjax, PDO::PARAM_INT);
+        $stmt->execute();
+        $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $stmt = $conn->prepare("SELECT * FROM patients ORDER BY patient_id ASC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offsetAjax, PDO::PARAM_INT);
+        $stmt->execute();
+        $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     header('Content-Type: application/json');
     echo json_encode($patients);
@@ -49,7 +57,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
         <link rel="stylesheet" href="../css/pp.css">
-        <script src="live.js"></script>
+<script src="../healthworker/live.js"></script>
     </head>
     <body>
 
@@ -123,7 +131,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
 <input type="text" id="searchPatient" name="search" class="form-control" placeholder="Search by Name" value="<?= htmlspecialchars($search) ?>">
-                    <button type="submit" class="btn btn-search">Search</button>
+<button type="button" class="btn btn-search">Search</button>
                 </div>
             </form>
         </div>
