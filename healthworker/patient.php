@@ -10,6 +10,11 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
 $username = $_SESSION['username'];
 $search = $_GET['search'] ?? '';
 
+$interventionSearch = $_GET['intervention_search'] ?? '';
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$recordsPerPage = 5;
+$offset = ($page - 1) * $recordsPerPage;
+
 if (isset($_POST['logout'])) {
     session_destroy();
     header("Location: ../login.php");
@@ -283,11 +288,23 @@ $conn = $database->getConnection();
     </div>
 </div>
 
+<!-- Intervention Table -->
+<div class="table-container">
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <!-- Search Form for Interventions -->
+            <form method="get" class="d-flex" style="max-width: 350px;">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="intervention_search" class="form-control" placeholder="Search by Patient Name or Doctor" value="<?= htmlspecialchars($interventionSearch) ?>">
+                    <button type="submit" class="btn btn-search">Search</button>
+                </div>
+            </form>
+        </div>
 
-        <div class="table-container">
-        <div class="table-responsive mt-4">
         <h4 class="fw-bold intervention-heading">Intervention</h4>
-        <table class="table table-bordered table-hover bg-white table-intervention">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover bg-white table-intervention">
                 <thead class="table-light">
                     <tr>
                         <th>Intervention ID</th>
@@ -300,53 +317,79 @@ $conn = $database->getConnection();
                 </thead>
                 <tbody id="interventionTableBody">
                     <?php
-                    // Example dummy data (replace with data from view.php)
-                    $interventions = [
-                        ["id" => 1, "patient_name" => "John Doe", "doctor" => "Dr. Smith", "reason" => "Routine Checkup", "intervention" => "Vaccination"],
-                        ["id" => 2, "patient_name" => "Jane Roe", "doctor" => "Dr. Johnson", "reason" => "Flu Symptoms", "intervention" => "Health Screening"]
-                    ];
+                    try {
+                        if (!empty($interventionSearch)) {
+                            $stmt = $conn->prepare("SELECT * FROM view_patient_intervention WHERE patient_name LIKE :search OR doctor LIKE :search ORDER BY id DESC LIMIT :offset, :limit");
+                            $stmt->bindValue(':search', '%' . $interventionSearch . '%', PDO::PARAM_STR);
+                        } else {
+                            $stmt = $conn->prepare("SELECT * FROM view_patient_intervention ORDER BY id DESC LIMIT :offset, :limit");
+                        }
+                        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+                        $stmt->bindValue(':limit', $recordsPerPage, PDO::PARAM_INT);
+                        $stmt->execute();
 
-                    foreach ($interventions as $i): ?>
-                    <tr>
-                        <td><?= $i['id'] ?></td>
-                        <td><?= htmlspecialchars($i['patient_name']) ?></td>
-                        <td><?= htmlspecialchars($i['doctor']) ?></td>
-                        <td><?= htmlspecialchars($i['reason']) ?></td>
-                        <td><?= htmlspecialchars($i['intervention']) ?></td>
-                        <td>
-                            <!-- View Button -->
-                            <button class="btn btn-custom-view btn-sm" data-bs-toggle="modal" data-bs-target="#viewModal<?= $i['id'] ?>">View</button>
+                        while ($i = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                            echo "<tr>
+                                <td>{$i['id']}</td>
+                                <td>" . htmlspecialchars($i['patient_name']) . "</td>
+                                <td>" . htmlspecialchars($i['doctor']) . "</td>
+                                <td>" . htmlspecialchars($i['reason']) . "</td>
+                                <td>" . htmlspecialchars($i['intervention']) . "</td>
+                                <td>
+                                    <button class='btn btn-custom-view btn-sm' data-bs-toggle='modal' data-bs-target='#viewModal{$i['id']}'>View</button>
 
-                        <!-- View Modal -->
-                        <div class="modal fade" id="viewModal<?= $i['id'] ?>" tabindex="-1" aria-labelledby="viewModalLabel<?= $i['id'] ?>" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="viewModalLabel<?= $i['id'] ?>">Intervention Details</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    <div class='modal fade' id='viewModal{$i['id']}' tabindex='-1' aria-labelledby='viewModalLabel{$i['id']}' aria-hidden='true'>
+                                        <div class='modal-dialog modal-lg modal-dialog-centered'>
+                                            <div class='modal-content'>
+                                                <div class='modal-header'>
+                                                    <h5 class='modal-title' id='viewModalLabel{$i['id']}'>Intervention Details</h5>
+                                                    <button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button>
+                                                </div>
+                                                <div class='modal-body p-0' style='height: 400px;'>
+                                                    <iframe src='view.php?id={$i['id']}' frameborder='0' style='width:100%; height:100%; border:none;'></iframe>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="modal-body">
-                                        <p><strong>Patient Name:</strong> <?= htmlspecialchars($i['patient_name']) ?></p>
-                                        <p><strong>Doctor:</strong> <?= htmlspecialchars($i['doctor']) ?></p>
-                                        <p><strong>Reason:</strong> <?= htmlspecialchars($i['reason']) ?></p>
-                                        <p><strong>Intervention:</strong> <?= htmlspecialchars($i['intervention']) ?></p>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
+                                </td>
+                            </tr>";
+                        }
+                    } catch (PDOException $e) {
+                        echo "<tr><td colspan='6'>Error loading interventions: " . $e->getMessage() . "</td></tr>";
+                    }
+                    ?>
                 </tbody>
             </table>
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-start">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        <?php
+                        try {
+                            $countStmt = $conn->prepare("SELECT COUNT(*) FROM view_patient_intervention" . (!empty($interventionSearch) ? " WHERE patient_name LIKE :search OR doctor LIKE :search" : ""));
+                            if (!empty($interventionSearch)) {
+                                $countStmt->bindValue(':search', '%' . $interventionSearch . '%', PDO::PARAM_STR);
+                            }
+                            $countStmt->execute();
+                            $totalRecords = $countStmt->fetchColumn();
+                            $totalPages = ceil($totalRecords / $recordsPerPage);
+
+                            for ($i = 1; $i <= $totalPages; $i++) {
+                                $active = $i === $page ? 'active' : '';
+                                echo "<li class='page-item {$active}'><a class='page-link' href='?page={$i}&intervention_search=" . urlencode($interventionSearch) . "'>{$i}</a></li>";
+                            }
+                        } catch (PDOException $e) {
+                            echo "<li class='page-item disabled'><span class='page-link'>Error</span></li>";
+                        }
+                        ?>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
-
-    
 </div>
+
 <script>
 function showSection(id) {
     document.querySelectorAll('.content').forEach(div => {

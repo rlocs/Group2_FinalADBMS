@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 11, 2025 at 02:46 PM
+-- Generation Time: May 07, 2025 at 09:51 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -18,443 +18,648 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `db_healthcenter`
+-- Database: `renew_healthcenter`
 --
-
--- --------------------------------------------------------
 CREATE DATABASE IF NOT EXISTS `db_healthcenter`;
 USE `db_healthcenter`;
 
+-- interventions table
+CREATE TABLE interventions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    intervention TEXT,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(appointment_id) ON DELETE CASCADE
+);
+
+-- View inrtevention
+CREATE VIEW view_patient_intervention AS
+SELECT 
+    a.appointment_id AS id,
+    CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+    CONCAT('Dr. ', u.username) AS doctor,
+    a.reason,
+    i.intervention
+FROM appointments a
+JOIN patients p ON a.patient_id = p.patient_id
+JOIN users u ON a.user_id = u.user_id
+LEFT JOIN interventions i ON a.appointment_id = i.appointment_id;
+
 DELIMITER $$
-
-CREATE PROCEDURE GetPatientHistory(IN patientID INT)
-BEGIN
-    -- Appointments
-    SELECT * FROM appointments WHERE patient_id = patientID;
-
-    -- Consultations
-    SELECT c.*
-    FROM consultations c
-    JOIN appointments a ON c.appointment_id = a.appointment_id
-    WHERE a.patient_id = patientID;
-
-    -- Health Metrics
-    SELECT * FROM healthmetrics WHERE patient_id = patientID;
-END$$
-
-DELIMITER ;
-
-DELIMITER $$
-
-CREATE PROCEDURE ScheduleAppointment(
-    IN p_patient_id INT,
-    IN p_worker_id INT,
-    IN p_date DATETIME,
-    IN p_purpose TEXT
+--
+-- Procedures
+--
+CREATE DEFINER=root@localhost PROCEDURE add_appointment (
+IN patient_name VARCHAR(255),
+IN date DATE,
+IN time TIME,
+IN doctor VARCHAR(255),
+IN reason VARCHAR(255)
 )
 BEGIN
-    INSERT INTO appointments (patient_id, worker_id, appointment_date, purpose, status)
-    VALUES (p_patient_id, p_worker_id, p_date, p_purpose, 'Scheduled');
+INSERT INTO appointments (patient_name, date, time, doctor, reason)
+VALUES (patient_name, date, time, doctor, reason);
 END$$
 
-DELIMITER ;
-
-DELIMITER $$
-
-CREATE PROCEDURE CountPatientsByBarangay()
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_today_appointment_count`(OUT total_today INT)
 BEGIN
+    SELECT COUNT(*) INTO total_today FROM appointments WHERE date = CURDATE();
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_tomorrow_appointment_count`(OUT total_tomorrow INT)
+BEGIN
+    SELECT COUNT(*) INTO total_tomorrow FROM appointments WHERE date = DATE_ADD(CURDATE(), INTERVAL 1 DAY);
+END$$
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_emergency_contact` (IN `p_household_id` INT, IN `p_emergency_contact_name` VARCHAR(255), IN `p_emergency_contact_number` VARCHAR(15), IN `p_emergency_contact_relation` VARCHAR(100))   BEGIN
+    INSERT INTO emergency_contacts (household_id, emergency_contact_name, emergency_contact_number, emergency_contact_relation)
+    VALUES (p_household_id, p_emergency_contact_name, p_emergency_contact_number, p_emergency_contact_relation);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_household` (IN `p_head_name` VARCHAR(255), IN `p_purok` VARCHAR(255), IN `p_nic_number` VARCHAR(20), IN `p_num_members` INT)   BEGIN
+    INSERT INTO households (head_name, purok, nic_number, num_members)
+    VALUES (p_head_name, p_purok, p_nic_number, p_num_members);
+    
+    SELECT LAST_INSERT_ID() AS household_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_household_members` (IN `p_household_id` INT, IN `p_member_name` VARCHAR(255), IN `p_relation` VARCHAR(255), IN `p_age` INT, IN `p_sex` ENUM('Male','Female','Other'))   BEGIN
+    INSERT INTO household_members (household_id, member_name, relation, age, sex)
+    VALUES (p_household_id, p_member_name, p_relation, p_age, p_sex);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_intervention` (IN `p_patient_id` INT, IN `p_doctor` VARCHAR(255), IN `p_reason` TEXT, IN `p_intervention` TEXT)   BEGIN
+  INSERT INTO interventions (patient_id, doctor, reason, intervention)
+  VALUES (p_patient_id, p_doctor, p_reason, p_intervention);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_medical_information` (IN `p_household_id` INT, IN `p_medical_condition` TEXT, IN `p_allergies` TEXT)   BEGIN
+    INSERT INTO medical_information (household_id, medical_condition, allergies)
+    VALUES (p_household_id, p_medical_condition, p_allergies);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_patient` (IN `p_name` VARCHAR(255), IN `p_gender` VARCHAR(10), IN `p_address` VARCHAR(255), IN `p_parents` VARCHAR(255), IN `p_dob` DATE, IN `p_weight` DECIMAL(5,2), IN `p_height` DECIMAL(5,2), IN `p_blood_type` VARCHAR(5), IN `p_reason` VARCHAR(255))   BEGIN
+    INSERT INTO patients (
+        name, gender, address, parents, dob, weight, height, blood_type, reason
+    ) VALUES (
+        p_name, p_gender, p_address, p_parents, p_dob, p_weight, p_height, p_blood_type, p_reason
+    );
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CountPatientsByBarangay` ()   BEGIN
     SELECT h.barangay, COUNT(p.patient_id) AS total_patients
     FROM patients p
     JOIN households h ON p.household_id = h.household_id
     GROUP BY h.barangay;
 END$$
 
-DELIMITER ;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `create_user` (IN `p_name` VARCHAR(255), IN `p_nic` VARCHAR(20), IN `p_email` VARCHAR(255), IN `p_gender` ENUM('Male','Female','Other'), IN `p_dob` DATE, IN `p_address` TEXT, IN `p_role` ENUM('Healthworker','Nurse','Doctor'), IN `p_username` VARCHAR(50), IN `p_password` VARCHAR(255))   BEGIN
+  IF EXISTS (SELECT 1 FROM users WHERE username = p_username) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Username already exists.';
+  ELSE
+    INSERT INTO users (
+      name, nic, email, gender, dob, address, role, username, password
+    ) VALUES (
+      p_name, p_nic, p_email, p_gender, p_dob, p_address, p_role, p_username, p_password
+    );
+  END IF;
+END$$
 
-DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `delete_appointment` (IN `appt_id` INT)   BEGIN
+    DELETE FROM appointments WHERE appointment_id = appt_id;
+END$$
 
-CREATE PROCEDURE AddHealthMetric(
-    IN p_patient_id INT,
-    IN p_date DATE,
-    IN p_blood_pressure VARCHAR(10),
-    IN p_weight DECIMAL(5,2),
-    IN p_temperature DECIMAL(4,1),
-    IN p_notes TEXT
+CREATE DEFINER=`root`@`localhost` PROCEDURE `delete_households` (IN `hh_id` INT)   BEGIN
+    DELETE FROM households WHERE household_id = hh_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `delete_patient` (IN `pat_id` INT)   BEGIN
+    DELETE FROM patients WHERE patient_id = pat_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_appointments_for_days` ()   BEGIN
+    SELECT 'today' AS day_type, appointment_id, patient_name, date, time, doctor, reason
+    FROM appointments
+    WHERE date = CURDATE()
+    UNION ALL
+    SELECT 'tomorrow' AS day_type, appointment_id, patient_name, date, time, doctor, reason
+    FROM appointments
+    WHERE date = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+    ORDER BY date, time;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_appointment_counts_by_date` ()   BEGIN
+  SELECT date, COUNT(*) AS appointment_count
+  FROM appointments
+  WHERE date >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+  GROUP BY date
+  ORDER BY date;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_interventions_by_patient` (IN `p_patient_id` INT)   BEGIN
+  SELECT i.intervention_id, p.name AS patient_name, i.doctor, i.reason, i.intervention, i.created_at
+  FROM interventions i
+  JOIN patients p ON i.patient_id = p.patient_id
+  WHERE i.patient_id = p_patient_id
+  ORDER BY i.created_at DESC;
+END$$
+
+CREATE PROCEDURE get_patient_counts_by_age_range()
+BEGIN
+SELECT
+DATE(created_at) AS date,
+COUNT(*) AS patient_count
+FROM patients
+WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+GROUP BY DATE(created_at)
+ORDER BY DATE(created_at);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `search_appointments` (IN `search_term` VARCHAR(255))   BEGIN
+    SELECT * FROM appointments
+    WHERE patient_name LIKE CONCAT('%', search_term, '%');
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `search_households` (IN `search_term` VARCHAR(255))   BEGIN
+    SELECT * FROM households
+    WHERE head_name LIKE CONCAT('%', search_term, '%');
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `search_patients` (IN `search_term` VARCHAR(255))   BEGIN
+    SELECT * FROM patients
+    WHERE name LIKE CONCAT('%', search_term, '%');
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `show_appointment_list` ()   BEGIN
+    SELECT * FROM appointments;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateAppointment` (IN `p_appointment_id` INT, IN `p_patient_name` VARCHAR(255), IN `p_date` DATE, IN `p_time` TIME, IN `p_doctor` VARCHAR(255), IN `p_reason` TEXT)   BEGIN
+    UPDATE appointments
+    SET
+        patient_name = p_patient_name,
+        date = p_date,
+        time = p_time,
+        doctor = p_doctor,
+        reason = p_reason
+    WHERE appointment_id = p_appointment_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateHouseholdProfile` (IN `p_household_id` INT, IN `p_head_name` VARCHAR(255), IN `p_purok` VARCHAR(255), IN `p_nic_number` VARCHAR(20), IN `p_num_members` INT, IN `p_medical_condition` TEXT, IN `p_allergies` TEXT, IN `p_emergency_contact_name` VARCHAR(255), IN `p_emergency_contact_number` VARCHAR(15), IN `p_emergency_contact_relation` VARCHAR(100))   BEGIN
+    -- Update Household Table
+    UPDATE households
+    SET head_name = p_head_name, 
+        purok = p_purok, 
+        nic_number = p_nic_number, 
+        num_members = p_num_members
+    WHERE household_id = p_household_id;
+
+    -- Update Medical Information Table
+    UPDATE medical_information
+    SET medical_condition = p_medical_condition,
+        allergies = p_allergies
+    WHERE household_id = p_household_id;
+
+    -- Update Emergency Contacts Table
+    UPDATE emergency_contacts
+    SET emergency_contact_name = p_emergency_contact_name, 
+        emergency_contact_number = p_emergency_contact_number, 
+        emergency_contact_relation = p_emergency_contact_relation
+    WHERE household_id = p_household_id;
+
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdatePatient` (IN `p_id` INT, IN `p_name` VARCHAR(100), IN `p_gender` ENUM('Male','Female','Other'), IN `p_address` VARCHAR(255), IN `p_parents` VARCHAR(255), IN `p_dob` DATE, IN `p_weight` DECIMAL(5,2), IN `p_height` DECIMAL(5,2), IN `p_blood_type` ENUM('A','B','AB','O','O+','Other'), IN `p_reason` TEXT)   BEGIN
+    UPDATE patients
+    SET 
+        name = p_name,
+        gender = p_gender,
+        address = p_address,
+        parents = p_parents,
+        dob = p_dob,
+        weight = p_weight,
+        height = p_height,
+        blood_type = p_blood_type,
+        reason = p_reason
+    WHERE patient_id = p_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `update_user_profile` (IN `p_user_id` INT, IN `p_name` VARCHAR(255), IN `p_nic` VARCHAR(20), IN `p_email` VARCHAR(255), IN `p_gender` ENUM('Male','Female','Other'), IN `p_dob` DATE, IN `p_address` TEXT)   BEGIN
+    UPDATE users
+    SET name = p_name,
+        nic = p_nic,
+        email = p_email,
+        gender = p_gender,
+        dob = p_dob,
+        address = p_address
+    WHERE user_id = p_user_id;
+END$$
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_total_households_count`(OUT total_households INT)
+BEGIN
+    SELECT COUNT(*) INTO total_households FROM households;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_total_patients_count`(OUT total_patients INT)
+BEGIN
+    SELECT COUNT(*) INTO total_patients FROM patients;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_total_households_rs`()
+BEGIN
+    SELECT COUNT(*) AS total_households FROM households;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_total_patients_rs`()
+BEGIN
+    SELECT COUNT(*) AS total_patients FROM patients;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_today_appointment_count_rs`()
+BEGIN
+    SELECT COUNT(*) AS total_today FROM appointments WHERE date = CURDATE();
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_tomorrow_appointment_count_rs`()
+BEGIN
+    SELECT COUNT(*) AS total_tomorrow FROM appointments WHERE date = DATE_ADD(CURDATE(), INTERVAL 1 DAY);
+END$$
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_patient_age_distribution_sp`()
+BEGIN
+    SELECT
+        CASE
+            WHEN dob IS NULL OR dob = '0000-00-00' THEN 'Unknown'
+            WHEN TIMESTAMPDIFF(YEAR, dob, CURDATE()) BETWEEN 0 AND 9 THEN '0-9'
+            WHEN TIMESTAMPDIFF(YEAR, dob, CURDATE()) BETWEEN 10 AND 19 THEN '10-19'
+            WHEN TIMESTAMPDIFF(YEAR, dob, CURDATE()) BETWEEN 20 AND 29 THEN '20-29'
+            WHEN TIMESTAMPDIFF(YEAR, dob, CURDATE()) BETWEEN 30 AND 39 THEN '30-39'
+            WHEN TIMESTAMPDIFF(YEAR, dob, CURDATE()) BETWEEN 40 AND 49 THEN '40-49'
+            WHEN TIMESTAMPDIFF(YEAR, dob, CURDATE()) BETWEEN 50 AND 59 THEN '50-59'
+            WHEN TIMESTAMPDIFF(YEAR, dob, CURDATE()) >= 60 THEN '60+'
+            ELSE 'Unknown'
+        END AS age_range,
+        COUNT(*) AS patient_count
+    FROM patients
+    GROUP BY age_range
+    ORDER BY age_range;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_medical_conditions_prevalence_sp`()
+BEGIN
+    SELECT condition_name, COUNT(*) AS condition_count FROM (
+        SELECT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(medical_condition, ',', numbers.n), ',', -1)) AS condition_name
+        FROM medical_information
+        JOIN (
+            SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+        ) numbers ON CHAR_LENGTH(medical_condition) - CHAR_LENGTH(REPLACE(medical_condition, ',', '')) >= numbers.n - 1
+        WHERE medical_condition IS NOT NULL AND medical_condition != ''
+    ) AS conditions
+    WHERE condition_name != '' AND LOWER(condition_name) != 'non'
+    GROUP BY condition_name
+    ORDER BY condition_count DESC
+    LIMIT 10;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `search_appointments_paginated` (
+    IN `search_term` VARCHAR(255),
+    IN `limit_val` INT,
+    IN `offset_val` INT
 )
 BEGIN
-    INSERT INTO healthmetrics (patient_id, checkup_date, blood_pressure, weight, temperature, notes)
-    VALUES (p_patient_id, p_date, p_blood_pressure, p_weight, p_temperature, p_notes);
+    IF search_term IS NOT NULL AND search_term != '' THEN
+        SELECT * FROM appointments
+        WHERE patient_name LIKE CONCAT('%', search_term, '%')
+        ORDER BY appointment_id ASC
+        LIMIT limit_val OFFSET offset_val;
+    ELSE
+        SELECT * FROM appointments
+        ORDER BY appointment_id ASC
+        LIMIT limit_val OFFSET offset_val;
+    END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_all_appointments_paginated` (
+    IN `limit_val` INT,
+    IN `offset_val` INT
+)
+BEGIN
+    SELECT * FROM appointments
+    ORDER BY appointment_id ASC
+    LIMIT limit_val OFFSET offset_val;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `search_appointments_count` (
+    IN `search_term` VARCHAR(255)
+)
+BEGIN
+    IF search_term IS NOT NULL AND search_term != '' THEN
+        SELECT COUNT(*) FROM appointments
+        WHERE patient_name LIKE CONCAT('%', search_term, '%');
+    ELSE
+        SELECT COUNT(*) FROM appointments;
+    END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `search_households_count` (
+    IN `search_term` VARCHAR(255)
+)
+BEGIN
+    IF search_term IS NOT NULL AND search_term != '' THEN
+        SELECT COUNT(*) FROM households
+        WHERE head_name LIKE CONCAT('%', search_term, '%');
+    ELSE
+        SELECT COUNT(*) FROM households;
+    END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `search_households_paginated` (
+    IN `search_term` VARCHAR(255),
+    IN `limit_val` INT,
+    IN `offset_val` INT
+)
+BEGIN
+    IF search_term IS NOT NULL AND search_term != '' THEN
+        SELECT 
+            h.*, 
+            mi.medical_condition, 
+            mi.allergies, 
+            ec.emergency_contact_name, 
+            ec.emergency_contact_number, 
+            ec.emergency_contact_relation
+        FROM households h
+        LEFT JOIN medical_information mi ON h.household_id = mi.household_id
+        LEFT JOIN emergency_contacts ec ON h.household_id = ec.household_id
+        WHERE h.head_name LIKE CONCAT('%', search_term, '%')
+        ORDER BY h.created_at DESC
+        LIMIT limit_val OFFSET offset_val;
+    ELSE
+        SELECT 
+            h.*, 
+            mi.medical_condition, 
+            mi.allergies, 
+            ec.emergency_contact_name, 
+            ec.emergency_contact_number, 
+            ec.emergency_contact_relation
+        FROM households h
+        LEFT JOIN medical_information mi ON h.household_id = mi.household_id
+        LEFT JOIN emergency_contacts ec ON h.household_id = ec.household_id
+        ORDER BY h.created_at DESC
+        LIMIT limit_val OFFSET offset_val;
+    END IF;
+END$$
+
+CREATE PROCEDURE get_all_households_paginated (
+    IN limit_val INT,
+    IN offset_val INT
+)
+BEGIN
+    SELECT 
+        h.*, 
+        mi.medical_condition, 
+        mi.allergies, 
+        ec.emergency_contact_name, 
+        ec.emergency_contact_number, 
+        ec.emergency_contact_relation
+    FROM households h
+    LEFT JOIN medical_information mi ON h.household_id = mi.household_id
+    LEFT JOIN emergency_contacts ec ON h.household_id = ec.household_id
+    ORDER BY h.created_at DESC
+    LIMIT limit_val OFFSET offset_val;
+END$$
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `search_patients_count` (
+    IN `search_term` VARCHAR(255)
+)
+BEGIN
+    IF search_term IS NOT NULL AND search_term != '' THEN
+        SELECT COUNT(*) AS total_patients FROM patients
+        WHERE name LIKE CONCAT('%', search_term, '%');
+    ELSE
+        SELECT COUNT(*) AS total_patients FROM patients;
+    END IF;
+END$$
+
+CREATE PROCEDURE `get_households_paginated_search` (
+    IN search_term VARCHAR(255),
+    IN limit_val INT,
+    IN offset_val INT
+)
+BEGIN
+    IF search_term IS NOT NULL AND search_term != '' THEN
+        SELECT 
+            h.household_id, 
+            h.head_name, 
+            h.purok, 
+            h.nic_number, 
+            h.num_members, 
+            h.created_at, 
+            mi.medical_condition, 
+            mi.allergies, 
+            ec.emergency_contact_name, 
+            ec.emergency_contact_number, 
+            ec.emergency_contact_relation
+        FROM households h
+        LEFT JOIN medical_information mi ON h.household_id = mi.household_id
+        LEFT JOIN emergency_contacts ec ON h.household_id = ec.household_id
+        WHERE h.head_name LIKE CONCAT('%', search_term, '%')
+        ORDER BY h.created_at DESC
+        LIMIT limit_val OFFSET offset_val;
+    ELSE
+        SELECT 
+            h.household_id, 
+            h.head_name, 
+            h.purok, 
+            h.nic_number, 
+            h.num_members, 
+            h.created_at, 
+            mi.medical_condition, 
+            mi.allergies, 
+            ec.emergency_contact_name, 
+            ec.emergency_contact_number, 
+            ec.emergency_contact_relation
+        FROM households h
+        LEFT JOIN medical_information mi ON h.household_id = mi.household_id
+        LEFT JOIN emergency_contacts ec ON h.household_id = ec.household_id
+        ORDER BY h.created_at DESC
+        LIMIT limit_val OFFSET offset_val;
+    END IF;
+END$$
+
+CREATE PROCEDURE get_household_members(IN p_household_id INT)
+BEGIN
+  SELECT member_id, household_id, member_name, relation, age, sex
+  FROM household_members
+  WHERE household_id = p_household_id;
 END$$
 
 DELIMITER ;
 
-DELIMITER $$
-
-CREATE PROCEDURE add_appointment(
-    IN patient_name VARCHAR(255),
-    IN date DATE,
-    IN time TIME,
-    IN doctor VARCHAR(255),
-    IN reason VARCHAR(255)
-)
-BEGIN
-    INSERT INTO appointments (patient_name, date, time, doctor, reason)
-    VALUES (patient_name, date, time, doctor, reason);
-END $$
-
-DELIMITER ;
-DELIMITER //
-
-CREATE PROCEDURE add_patient (
-    IN p_name VARCHAR(255),
-    IN p_gender VARCHAR(10),
-    IN p_address VARCHAR(255),
-    IN p_parents VARCHAR(255),
-    IN p_dob DATE,
-    IN p_weight DECIMAL(5,2),
-    IN p_height DECIMAL(5,2),
-    IN p_blood_type VARCHAR(5),
-    IN p_reason VARCHAR(255)
-)
-BEGIN
-    -- Insert a new patient into the `patients` table
-    INSERT INTO patients (
-        name,
-        gender,
-        address,
-        parents,
-        dob,
-        weight,
-        height,
-        blood_type,
-        reason
-    ) VALUES (
-        p_name,
-        p_gender,
-        p_address,
-        p_parents,
-        p_dob,
-        p_weight,
-        p_height,
-        p_blood_type,
-        p_reason
-    );
-END //
-
-DELIMITER ;
-
--- Stored Procedure for Adding Household
-DELIMITER $$
-
-CREATE PROCEDURE add_household(
-    IN p_head_name VARCHAR(255),
-    IN p_purok VARCHAR(255),
-    IN p_nic_number VARCHAR(20),
-    IN p_num_members INT
-)
-BEGIN
-    INSERT INTO households (head_name, purok, nic_number, num_members)
-    VALUES (p_head_name, p_purok, p_nic_number, p_num_members);
-    SELECT LAST_INSERT_ID() AS household_id;
-END $$
-
-DELIMITER ;
-
--- Stored Procedure for Adding Household Members
-DELIMITER $$
-
-CREATE PROCEDURE add_household_members(
-    IN p_household_id INT,
-    IN p_member_name VARCHAR(255),
-    IN p_relation VARCHAR(255),
-    IN p_age INT,  -- Changed to INT for Age
-    IN p_sex ENUM('Male', 'Female', 'Other')  -- Changed to ENUM for sex
-)
-BEGIN
-    INSERT INTO household_members (household_id, member_name, relation, age, sex)
-    VALUES (p_household_id, p_member_name, p_relation, p_age, p_sex);
-END $$
-
-DELIMITER ;
-
--- Stored Procedure for Adding Medical Information
-DELIMITER $$
-
-CREATE PROCEDURE add_medical_information(
-    IN p_household_id INT,
-    IN p_medical_condition TEXT,
-    IN p_allergies TEXT
-)
-BEGIN
-    INSERT INTO medical_information (household_id, medical_condition, allergies)
-    VALUES (p_household_id, p_medical_condition, p_allergies);
-END $$
-
-DELIMITER ;
-
--- Stored Procedure for Adding Emergency Contact
-DELIMITER $$
-
-CREATE PROCEDURE add_emergency_contact(
-    IN p_household_id INT,
-    IN p_emergency_contact_name VARCHAR(255),
-    IN p_emergency_contact_number VARCHAR(15),
-    IN p_emergency_contact_relation VARCHAR(100)
-)
-BEGIN
-    INSERT INTO emergency_contacts (household_id, emergency_contact_name, emergency_contact_number, emergency_contact_relation)
-    VALUES (p_household_id, p_emergency_contact_name, p_emergency_contact_number, p_emergency_contact_relation);
-END $$
-
-DELIMITER $$
-
---Stored procedure for delete appointment
-
-DELIMITER $$ 
-CREATE PROCEDURE delete_appointment (
-  IN appt_id INT
-)
-BEGIN
-DELETE FROM appointments WHERE appointment_id = appt_id;
-END $$
-DELIMITER;
-
---Stored Procedure for delete patient--
-
-DELIMITER $$
-CREATE PROCEDURE delete_patient(
-    IN pat_id INT
-)
-BEGIN
-DELETE FROM patients WHERE patient_id = pat_id;
-END $$
-DELIMITER;
-
---Stored Procedure for delete household-- 
-
-DELIMITER $$
-CREATE PROCEDURE delete_households(
-    IN hh_id INT
-)
-BEGIN 
-DELETE FROM households WHERE household_id = hh_id;
-END $$
-DELIMITER;
+-- --------------------------------------------------------
 
 --
--- Table structure for table `users`
+-- Procedures
 --
 
--- Stored Procedure for showing appointment table--
 
--- Appointment Table View --
-
-DELIMITER $$
-
-CREATE PROCEDURE show_appointment_list()
-BEGIN
-    SELECT * FROM appointments;
-END $$
-
-DELIMITER ;
-
-
-
-CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
-  `username` varchar(50) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `role` enum('Healthworker','Nurse','Doctor') NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`id`, `username`, `password`, `role`) VALUES
-(1, 'health1', '$2y$10$VI1pS8PxAd00oDHBVrs0kO77IdW04fvietHSCwgKfXt/2oHyBA8aC', 'Healthworker'), -- password: healthpass
-(2, 'nurse1', '$2y$10$iR8crVFYoghjgkOB4mW7Qe8KihmhCPSO1c3mUe/c0T.bN4VCYRkIy', 'Nurse'),         -- password: nursepass
-(3, 'doctor1', '$2y$10$x4PLjpI/uPnEG2nW/kkkuu0c3wBZwJy9kgoWrJ2fef/TjDDczM/Bm', 'Doctor');        -- password: doctorpass
-
---
--- Indexes for table `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `username` (`username`);
-
---
--- AUTO_INCREMENT for table `users`
---
-ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
- /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
- /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `appointments`
 --
 
-CREATE TABLE appointments (
-  appointment_id INT(11) NOT NULL AUTO_INCREMENT,
-  patient_name VARCHAR(255) NOT NULL,
-  date DATE NOT NULL,
-  time TIME NOT NULL,
-  doctor VARCHAR(255) NOT NULL,
-  reason TEXT NOT NULL,
-  PRIMARY KEY (appointment_id)
+CREATE TABLE `appointments` (
+  `appointment_id` int(11) NOT NULL,
+  `patient_name` varchar(255) NOT NULL,
+  `date` date NOT NULL,
+  `time` time NOT NULL,
+  `doctor` varchar(255) NOT NULL,
+  `reason` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
+CREATE TABLE IF NOT EXISTS residents (
+  resident_id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  phone VARCHAR(20),
+  address TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+INSERT INTO residents (name, email, phone, address, password) VALUES (
+  'John Doe',
+  'johndoe@example.com',
+  '123-456-7890',
+  '123 Main St, Barangay San Pedro, Sto. Tomas, Batangas',
+  '$2y$10$BJVTjSrGou9CbMjv0AMRWuqb99OLMLTHS3uqso6odmaarv2ltVxBq' -- Example hashed password
+);
 --
 -- Dumping data for table `appointments`
 --
 
-INSERT INTO appointments (patient_name, date, time, doctor, reason) VALUES
-('John Doe', '2025-04-15', '09:00:00', 'Dr. Smith', 'Routine Check-up'),
-('Jane Doe', '2025-04-16', '10:30:00', 'Dr. Lee', 'Vaccination'),
-('Alice Johnson', '2025-04-17', '11:00:00', 'Dr. Brown', 'Consultation for fever'),
-('Bob Martin', '2025-04-18', '08:30:00', 'Dr. Green', 'Follow-up check-up');
+INSERT INTO `appointments` (`appointment_id`, `patient_name`, `date`, `time`, `doctor`, `reason`) VALUES
+(927, 'John Doe', '2025-04-15', '09:00:00', 'Dr. Smith', 'Routine Check-up'),
+(928, 'Jane Doe', '2025-04-16', '10:30:00', 'Dr. Lee', 'Vaccination'),
+(929, 'Alice Johnson', '2025-04-17', '11:00:00', 'Dr. Brown', 'Consultation for fever'),
+(930, 'Bob Martin', '2025-04-18', '08:30:00', 'Dr. Green', 'Follow-up check-up'),
+(931, 'fgdfgd', '2003-02-16', '12:22:00', 'Dr.Harley', 'Checkup'),
+(932, 'ralph lauren bautista', '2025-05-07', '15:13:00', 'Dr.Harley', 'Flu'),
+(933, 'dasdasda', '2025-05-08', '07:18:00', 'Dr.Harley', 'Emergency');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `consultations`
+-- Table structure for table `emergency_contacts`
 --
 
-CREATE TABLE `consultations` (
-  `consultation_id` int(11) NOT NULL,
-  `appointment_id` int(11) DEFAULT NULL,
-  `findings` text DEFAULT NULL,
-  `prescription` text DEFAULT NULL,
-  `remarks` text DEFAULT NULL,
-  `consultation_date` datetime DEFAULT current_timestamp()
+CREATE TABLE `emergency_contacts` (
+  `emergency_id` int(11) NOT NULL,
+  `household_id` int(11) DEFAULT NULL,
+  `emergency_contact_name` varchar(255) DEFAULT NULL,
+  `emergency_contact_number` varchar(15) DEFAULT NULL,
+  `emergency_contact_relation` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `consultations`
+-- Dumping data for table `emergency_contacts`
 --
 
-INSERT INTO `consultations` (`consultation_id`, `appointment_id`, `findings`, `prescription`, `remarks`, `consultation_date`) VALUES
-(1, 1, 'Blood pressure slightly high.', 'Amlodipine 5mg once daily', 'Follow-up in 2 weeks', '2025-04-11 20:46:09'),
-(2, 2, 'Patient vaccinated for influenza.', 'None', 'Return for next scheduled vaccination', '2025-04-11 20:46:09');
+INSERT INTO `emergency_contacts` (`emergency_id`, `household_id`, `emergency_contact_name`, `emergency_contact_number`, `emergency_contact_relation`) VALUES
+(927, 927, 'Sarah Doe', '09123456789', 'Sister');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `healthmetrics`
+-- Table structure for table `households`
 --
 
-CREATE TABLE `healthmetrics` (
-  `metric_id` int(11) NOT NULL,
-  `patient_id` int(11) DEFAULT NULL,
-  `checkup_date` date DEFAULT NULL,
-  `blood_pressure` varchar(10) DEFAULT NULL,
-  `weight` decimal(5,2) DEFAULT NULL,
-  `temperature` decimal(4,1) DEFAULT NULL,
-  `notes` text DEFAULT NULL
+CREATE TABLE `households` (
+  `household_id` int(11) NOT NULL,
+  `head_name` varchar(255) NOT NULL,
+  `purok` varchar(255) NOT NULL,
+  `nic_number` varchar(20) NOT NULL,
+  `num_members` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `healthmetrics`
+-- Dumping data for table `households`
 --
 
-INSERT INTO `healthmetrics` (`metric_id`, `patient_id`, `checkup_date`, `blood_pressure`, `weight`, `temperature`, `notes`) VALUES
-(1, 1, '2025-04-10', '140/90', 70.50, 36.8, 'High BP noted'),
-(2, 4, '2025-04-08', '120/80', 55.00, 37.0, 'Normal metrics');
+INSERT INTO `households` (`household_id`, `head_name`, `purok`, `nic_number`, `num_members`, `created_at`) VALUES
+(927, 'John Doe', 'Purok 1', '1234567890', 5, '2025-05-07 06:07:20');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `healthworkers`
+-- Table structure for table `household_members`
 --
 
-CREATE TABLE `healthworkers` (
-  `worker_id` int(11) NOT NULL,
-  `full_name` varchar(100) DEFAULT NULL,
-  `role` varchar(50) DEFAULT NULL,
-  `contact_number` varchar(15) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL
+CREATE TABLE `household_members` (
+  `member_id` int(11) NOT NULL,
+  `household_id` int(11) DEFAULT NULL,
+  `member_name` varchar(255) DEFAULT NULL,
+  `relation` varchar(255) DEFAULT NULL,
+  `age` int(11) DEFAULT NULL,
+  `sex` enum('Male','Female','Other') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `healthworkers`
+-- Dumping data for table `household_members`
 --
 
-INSERT INTO `healthworkers` (`worker_id`, `full_name`, `role`, `contact_number`, `email`) VALUES
-(1, 'Dr. Emilio Reyes', 'Doctor', '09998887777', 'emilio.reyes@clinic.com'),
-(2, 'Nurse Liza Mendoza', 'Nurse', '09172345678', 'liza.mendoza@clinic.com');
+INSERT INTO `household_members` (`member_id`, `household_id`, `member_name`, `relation`, `age`, `sex`) VALUES
+(927, 927, 'John John', 'Spouse', 22, 'Male');
 
 -- --------------------------------------------------------
 
--- Create Household Table
-CREATE TABLE households (
-    household_id INT AUTO_INCREMENT PRIMARY KEY,
-    head_name VARCHAR(255) NOT NULL,
-    purok VARCHAR(255) NOT NULL,
-    nic_number VARCHAR(20) NOT NULL,
-    num_members INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+--
+-- Table structure for table `interventions`
+--
 
--- Create Medical Information Table (for medical_condition and allergies)
-CREATE TABLE medical_information (
-    medical_id INT AUTO_INCREMENT PRIMARY KEY,
-    household_id INT,
-    medical_condition TEXT,
-    allergies TEXT,
-    FOREIGN KEY (household_id) REFERENCES households(household_id) ON DELETE CASCADE
-);
+CREATE TABLE `interventions` (
+  `intervention_id` int(11) NOT NULL,
+  `patient_id` int(11) NOT NULL,
+  `doctor` varchar(255) NOT NULL,
+  `reason` text NOT NULL,
+  `intervention` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Create Household Members Table
-CREATE TABLE household_members (
-    member_id INT AUTO_INCREMENT PRIMARY KEY,
-    household_id INT,
-    member_name VARCHAR(255),
-    relation VARCHAR(255),
-    age INT,
-    sex ENUM('Male', 'Female', 'Other'),
-    FOREIGN KEY (household_id) REFERENCES households(household_id) ON DELETE CASCADE
-);
+--
+-- Dumping data for table `interventions`
+--
 
--- Create Emergency Contacts Table
-CREATE TABLE emergency_contacts (
-    emergency_id INT AUTO_INCREMENT PRIMARY KEY,
-    household_id INT,
-    emergency_contact_name VARCHAR(255),
-    emergency_contact_number VARCHAR(15),
-    emergency_contact_relation VARCHAR(100),
-    FOREIGN KEY (household_id) REFERENCES households(household_id) ON DELETE CASCADE
-);
+INSERT INTO `interventions` (`intervention_id`, `patient_id`, `doctor`, `reason`, `intervention`, `created_at`) VALUES
+(927, 927, 'Dr. Jane Doe', 'Post-surgery follow-up', 'Reviewed recovery and adjusted medication.', '2025-05-07 06:07:20'),
+(928, 928, 'Dr. Alan Smith', 'Routine Checkup', 'Performed general physical exam and recommended exercise.', '2025-05-07 06:07:20'),
+(929, 929, 'Dr. Maria Lopez', 'High blood pressure', 'Monitored blood pressure and prescribed medication.', '2025-05-07 06:07:20'),
+(930, 930, 'Dr. John Kim', 'Diabetes Management', 'Adjusted insulin dosage and advised dietary changes.', '2025-05-07 06:07:20');
 
--- Insert Example Data into Household Table
-INSERT INTO households (head_name, purok, nic_number, num_members)
-VALUES
-('John Doe', 'Purok 1', '1234567890', 5);
+-- --------------------------------------------------------
 
--- Insert Example Data into Medical Information Table
--- You must ensure that the household_id inserted into 'households' exists before this
-INSERT INTO medical_information (household_id, medical_condition, allergies)
-VALUES (1, 'Hypertension, Asthma', 'Pollen, Dust');
+--
+-- Table structure for table `medical_information`
+--
 
--- Insert Example Data into Household Members Table
--- Ensure the household_id (1) is present in households before inserting
-INSERT INTO household_members (household_id, member_name, relation, age , sex)
-VALUES
-(1, 'John John', 'Spouse', 22, 'Male');
+CREATE TABLE `medical_information` (
+  `medical_id` int(11) NOT NULL,
+  `household_id` int(11) DEFAULT NULL,
+  `medical_condition` text DEFAULT NULL,
+  `allergies` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Insert Example Data into Emergency Contacts Table
--- Ensure household_id (1) exists in the households table
-INSERT INTO emergency_contacts (household_id, emergency_contact_name, emergency_contact_number, emergency_contact_relation)
-VALUES
-(1, 'Sarah Doe', '09123456789', 'Sister');
+--
+-- Dumping data for table `medical_information`
+--
 
+INSERT INTO `medical_information` (`medical_id`, `household_id`, `medical_condition`, `allergies`) VALUES
+(927, 927, 'Hypertension, Asthma', 'Pollen, Dust');
 
 -- --------------------------------------------------------
 
@@ -463,27 +668,205 @@ VALUES
 --
 
 CREATE TABLE `patients` (
-  `patient_id` int(11) NOT NULL AUTO_INCREMENT,
+  `patient_id` int(11) NOT NULL,
   `household_id` int(11) DEFAULT NULL,
-  `name` VARCHAR(100) NOT NULL,
-  `gender` ENUM('Male', 'Female', 'Other') NOT NULL,
-  `address` VARCHAR(255) DEFAULT NULL,
-  `parents` VARCHAR(255) DEFAULT NULL,
-  `dob` DATE NOT NULL,  -- Date of Birth
-  `weight` DECIMAL(5,2) DEFAULT NULL,  -- Weight in kilograms
-  `height` DECIMAL(5,2) DEFAULT NULL,  -- Height in meters
-  `blood_type` ENUM('A', 'B', 'AB', 'O', 'O+', 'Other') DEFAULT NULL,
-  `reason` TEXT DEFAULT NULL,  -- Reason for the visit or notes
-  `is_household_head` tinyint(1) DEFAULT 0,
-  PRIMARY KEY (`patient_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `name` varchar(100) NOT NULL,
+  `gender` enum('Male','Female','Other') NOT NULL,
+  `address` varchar(255) DEFAULT NULL,
+  `parents` varchar(255) DEFAULT NULL,
+  `dob` date NOT NULL,
+  `weight` decimal(5,2) DEFAULT NULL,
+  `height` decimal(5,2) DEFAULT NULL,
+  `blood_type` enum('A','B','AB','O','O+','Other') DEFAULT NULL,
+  `reason` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
 -- Dumping data for table `patients`
-INSERT INTO `patients` (`household_id`, `name`, `gender`, `address`, `parents`, `dob`, `weight`, `height`, `blood_type`, `reason`, `is_household_head`) VALUES
-(1, 'Juan Dela Cruz', 'Male', '123 Street, City', 'Maria Dela Cruz, Juan Dela Cruz Sr.', '1985-06-15', 70.5, 1.75, 'O', 'General checkup', 1),
-(1, 'Ana Dela Cruz', 'Female', '456 Avenue, City', 'Jose Dela Cruz, Maria Dela Cruz', '1987-10-20', 55.3, 1.60, 'A', 'Routine exam', 0),
-(1, 'Carlos Dela Cruz', 'Male', '789 Road, City', 'Maria Dela Cruz', '2010-08-05', 30.0, 1.40, 'B', 'Vaccination', 0),
-(2, 'Maria Santos', 'Female', '101 Park, City', 'Jose Santos, Laura Santos', '1990-12-12', 62.0, 1.65, 'AB', 'Consultation', 1);
+--
+
+INSERT INTO `patients` (`patient_id`, `household_id`, `name`, `gender`, `address`, `parents`, `dob`, `weight`, `height`, `blood_type`, `reason`) VALUES
+(927, 1, 'Juan Dela Cruz', 'Male', '123 Street, City', 'Maria Dela Cruz, Juan Dela Cruz Sr.', '1985-06-15', 70.50, 1.75, 'O', 'General checkup'),
+(928, 2, 'Ana Dela Cruz', 'Female', '456 Avenue, City', 'Jose Dela Cruz, Maria Dela Cruz', '1987-10-20', 55.30, 1.60, 'A', 'Routine exam'),
+(929, 3, 'Carlos Dela Cruz', 'Male', '789 Road, City', 'Maria Dela Cruz', '2010-08-05', 30.00, 1.40, 'B', 'Vaccination'),
+(930, 4, 'Maria Santos', 'Female', '101 Park, City', 'Jose Santos, Laura Santos', '1990-12-12', 62.00, 1.65, 'AB', 'Consultation'),
+(931, NULL, 'Ralph Lauren Bautista', 'Male', 'sd', 'sd', '2022-06-23', 54.00, 145.00, 'O', 'wala lang');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `user_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `nic` varchar(20) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `gender` enum('Male','Female','Other') NOT NULL,
+  `dob` date NOT NULL,
+  `address` text NOT NULL,
+  `role` enum('Healthworker','Nurse','Doctor') NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`user_id`, `name`, `nic`, `email`, `gender`, `dob`, `address`, `role`, `username`, `password`) VALUES
+(927, 'Health Worker One', 'HW123456', 'health1@example.com', 'Male', '1990-01-01', '123 Health St, Wellness City', 'Healthworker', 'health1', '$2y$10$e3OWiba9X/T/DrrIGJjNYOrKA0PaiuLAcH6Wp.p3LcI6sCoBDGadG'),
+(928, 'Nurse One', 'NR654321', 'nurse1@example.com', 'Female', '1988-05-12', '456 Nurse Ave, Caretown', 'Nurse', 'nurse1', '$2y$10$iR8crVFYoghjgkOB4mW7Qe8KihmhCPSO1c3mUe/c0T.bN4VCYRkIy'),
+(929, 'Doctor One', 'DR112233', 'doctor1@example.com', 'Other', '1985-03-30', '789 Doctor Blvd, Healville', 'Doctor', 'doctor1', '$2y$10$x4PLjpI/uPnEG2nW/kkkuu0c3wBZwJy9kgoWrJ2fef/TjDDczM/Bm');
+
+-- Add medication-related tables and procedures
+
+-- Create medications table
+CREATE TABLE IF NOT EXISTS `medications` (
+    `medication_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(255) NOT NULL,
+    `generic_name` VARCHAR(255) NOT NULL,
+    `category` VARCHAR(100) NOT NULL,
+    `unit` VARCHAR(50) NOT NULL,
+    `description` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Create medication_inventory table
+CREATE TABLE IF NOT EXISTS `medication_inventory` (
+    `inventory_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `medication_id` INT NOT NULL,
+    `batch_number` VARCHAR(100),
+    `quantity` INT NOT NULL DEFAULT 0,
+    `expiry_date` DATE,
+    `supplier` VARCHAR(255),
+    `date_received` DATE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`medication_id`) REFERENCES `medications`(`medication_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Create medication_transactions table
+CREATE TABLE IF NOT EXISTS `medication_transactions` (
+    `transaction_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `medication_id` INT NOT NULL,
+    `inventory_id` INT NOT NULL,
+    `transaction_type` ENUM('IN', 'OUT') NOT NULL,
+    `quantity` INT NOT NULL,
+    `patient_id` INT,
+    `notes` TEXT,
+    `transaction_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `created_by` VARCHAR(100),
+    FOREIGN KEY (`medication_id`) REFERENCES `medications`(`medication_id`),
+    FOREIGN KEY (`inventory_id`) REFERENCES `medication_inventory`(`inventory_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Add medication-related stored procedures
+DELIMITER $$
+
+-- Procedure to add a new medication
+CREATE PROCEDURE IF NOT EXISTS `add_medication` (
+    IN p_name VARCHAR(255),
+    IN p_generic_name VARCHAR(255),
+    IN p_category VARCHAR(100),
+    IN p_unit VARCHAR(50),
+    IN p_description TEXT
+)
+BEGIN
+    INSERT INTO medications (name, generic_name, category, unit, description)
+    VALUES (p_name, p_generic_name, p_category, p_unit, p_description);
+    SELECT LAST_INSERT_ID() AS medication_id;
+END$$
+
+-- Procedure to add inventory
+CREATE PROCEDURE IF NOT EXISTS `add_inventory` (
+    IN p_medication_id INT,
+    IN p_batch_number VARCHAR(100),
+    IN p_quantity INT,
+    IN p_expiry_date DATE,
+    IN p_supplier VARCHAR(255),
+    IN p_date_received DATE
+)
+BEGIN
+    INSERT INTO medication_inventory (medication_id, batch_number, quantity, expiry_date, supplier, date_received)
+    VALUES (p_medication_id, p_batch_number, p_quantity, p_expiry_date, p_supplier, p_date_received);
+    
+    INSERT INTO medication_transactions (medication_id, inventory_id, transaction_type, quantity, notes, created_by)
+    VALUES (p_medication_id, LAST_INSERT_ID(), 'IN', p_quantity, CONCAT('Initial stock - Batch: ', p_batch_number), USER());
+END$$
+
+-- Procedure to dispense medication
+CREATE PROCEDURE IF NOT EXISTS `dispense_medication` (
+    IN p_inventory_id INT,
+    IN p_quantity INT,
+    IN p_patient_id INT,
+    IN p_notes TEXT,
+    IN p_created_by VARCHAR(100)
+)
+BEGIN
+    DECLARE v_medication_id INT;
+    DECLARE v_current_quantity INT;
+    
+    -- Get medication_id and current quantity
+    SELECT medication_id, quantity INTO v_medication_id, v_current_quantity
+    FROM medication_inventory WHERE inventory_id = p_inventory_id;
+    
+    -- Check if there's enough stock
+    IF v_current_quantity >= p_quantity THEN
+        -- Update inventory
+        UPDATE medication_inventory 
+        SET quantity = quantity - p_quantity
+        WHERE inventory_id = p_inventory_id;
+        
+        -- Record transaction
+        INSERT INTO medication_transactions (
+            medication_id, inventory_id, transaction_type, 
+            quantity, patient_id, notes, created_by
+        ) VALUES (
+            v_medication_id, p_inventory_id, 'OUT', 
+            p_quantity, p_patient_id, p_notes, p_created_by
+        );
+        
+        SELECT 'Success' AS result;
+    ELSE
+        SELECT CONCAT('Insufficient stock. Available: ', v_current_quantity) AS result;
+    END IF;
+END$$
+
+-- Procedure to get medication inventory summary
+CREATE PROCEDURE IF NOT EXISTS `get_medication_inventory` ()
+BEGIN
+    SELECT m.medication_id, m.name, m.generic_name, m.category, m.unit,
+           SUM(mi.quantity) AS total_quantity,
+           MIN(mi.expiry_date) AS nearest_expiry
+    FROM medications m
+    LEFT JOIN medication_inventory mi ON m.medication_id = mi.medication_id
+    GROUP BY m.medication_id
+    ORDER BY m.name;
+END$$
+
+-- Procedure to get expiring medications
+CREATE PROCEDURE IF NOT EXISTS `get_expiring_medications` (IN days_threshold INT)
+BEGIN
+    SELECT m.name, m.generic_name, mi.batch_number, mi.quantity, 
+           mi.expiry_date, DATEDIFF(mi.expiry_date, CURDATE()) AS days_remaining
+    FROM medication_inventory mi
+    JOIN medications m ON mi.medication_id = m.medication_id
+    WHERE mi.expiry_date IS NOT NULL 
+      AND mi.expiry_date <= DATE_ADD(CURDATE(), INTERVAL days_threshold DAY)
+      AND mi.quantity > 0
+    ORDER BY mi.expiry_date;
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+--
+-- Table structure for table `residents`
+--
+
 
 --
 -- Indexes for dumped tables
@@ -493,29 +876,14 @@ INSERT INTO `patients` (`household_id`, `name`, `gender`, `address`, `parents`, 
 -- Indexes for table `appointments`
 --
 ALTER TABLE `appointments`
-  ADD PRIMARY KEY (`appointment_id`),
-  ADD KEY `patient_id` (`patient_id`),
-  ADD KEY `worker_id` (`worker_id`);
+  ADD PRIMARY KEY (`appointment_id`);
 
 --
--- Indexes for table `consultations`
+-- Indexes for table `emergency_contacts`
 --
-ALTER TABLE `consultations`
-  ADD PRIMARY KEY (`consultation_id`),
-  ADD KEY `appointment_id` (`appointment_id`);
-
---
--- Indexes for table `healthmetrics`
---
-ALTER TABLE `healthmetrics`
-  ADD PRIMARY KEY (`metric_id`),
-  ADD KEY `patient_id` (`patient_id`);
-
---
--- Indexes for table `healthworkers`
---
-ALTER TABLE `healthworkers`
-  ADD PRIMARY KEY (`worker_id`);
+ALTER TABLE `emergency_contacts`
+  ADD PRIMARY KEY (`emergency_id`),
+  ADD KEY `household_id` (`household_id`);
 
 --
 -- Indexes for table `households`
@@ -524,11 +892,38 @@ ALTER TABLE `households`
   ADD PRIMARY KEY (`household_id`);
 
 --
+-- Indexes for table `household_members`
+--
+ALTER TABLE `household_members`
+  ADD PRIMARY KEY (`member_id`),
+  ADD KEY `household_id` (`household_id`);
+
+--
+-- Indexes for table `interventions`
+--
+ALTER TABLE `interventions`
+  ADD PRIMARY KEY (`intervention_id`),
+  ADD KEY `patient_id` (`patient_id`);
+
+--
+-- Indexes for table `medical_information`
+--
+ALTER TABLE `medical_information`
+  ADD PRIMARY KEY (`medical_id`),
+  ADD KEY `household_id` (`household_id`);
+
+--
 -- Indexes for table `patients`
 --
 ALTER TABLE `patients`
-  ADD PRIMARY KEY (`patient_id`),
-  ADD KEY `household_id` (`household_id`);
+  ADD PRIMARY KEY (`patient_id`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`user_id`),
+  ADD UNIQUE KEY `username` (`username`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -538,1165 +933,82 @@ ALTER TABLE `patients`
 -- AUTO_INCREMENT for table `appointments`
 --
 ALTER TABLE `appointments`
-  MODIFY `appointment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `appointment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=934;
 
 --
--- AUTO_INCREMENT for table `consultations`
+-- AUTO_INCREMENT for table `emergency_contacts`
 --
-ALTER TABLE `consultations`
-  MODIFY `consultation_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `healthmetrics`
---
-ALTER TABLE `healthmetrics`
-  MODIFY `metric_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `healthworkers`
---
-ALTER TABLE `healthworkers`
-  MODIFY `worker_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+ALTER TABLE `emergency_contacts`
+  MODIFY `emergency_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=928;
 
 --
 -- AUTO_INCREMENT for table `households`
 --
 ALTER TABLE `households`
-  MODIFY `household_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `household_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=928;
+
+--
+-- AUTO_INCREMENT for table `household_members`
+--
+ALTER TABLE `household_members`
+  MODIFY `member_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=928;
+
+--
+-- AUTO_INCREMENT for table `interventions`
+--
+ALTER TABLE `interventions`
+  MODIFY `intervention_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=927;
+
+--
+-- AUTO_INCREMENT for table `medical_information`
+--
+ALTER TABLE `medical_information`
+  MODIFY `medical_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=928;
 
 --
 -- AUTO_INCREMENT for table `patients`
 --
 ALTER TABLE `patients`
-  MODIFY `patient_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `patient_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=932;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=930;
 
 --
 -- Constraints for dumped tables
 --
 
 --
--- Constraints for table `appointments`
+-- Constraints for table `emergency_contacts`
 --
-ALTER TABLE `appointments`
-  ADD CONSTRAINT `appointments_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`),
-  ADD CONSTRAINT `appointments_ibfk_2` FOREIGN KEY (`worker_id`) REFERENCES `healthworkers` (`worker_id`);
+ALTER TABLE `emergency_contacts`
+  ADD CONSTRAINT `emergency_contacts_ibfk_1` FOREIGN KEY (`household_id`) REFERENCES `households` (`household_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `consultations`
+-- Constraints for table `household_members`
 --
-ALTER TABLE `consultations`
-  ADD CONSTRAINT `consultations_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`appointment_id`);
+ALTER TABLE `household_members`
+  ADD CONSTRAINT `household_members_ibfk_1` FOREIGN KEY (`household_id`) REFERENCES `households` (`household_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `healthmetrics`
+-- Constraints for table `interventions`
 --
-ALTER TABLE `healthmetrics`
-  ADD CONSTRAINT `healthmetrics_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`);
+ALTER TABLE `interventions`
+  ADD CONSTRAINT `interventions_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `patients`
+-- Constraints for table `medical_information`
 --
-ALTER TABLE `patients`
-  ADD CONSTRAINT `patients_ibfk_1` FOREIGN KEY (`household_id`) REFERENCES `households` (`household_id`);
+ALTER TABLE `medical_information`
+  ADD CONSTRAINT `medical_information_ibfk_1` FOREIGN KEY (`household_id`) REFERENCES `households` (`household_id`) ON DELETE CASCADE;
 COMMIT;
+
+
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
--- Create activity_logs table for the ActivityLogger class
-CREATE TABLE `activity_logs` (
-  `log_id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `action` varchar(50) NOT NULL,
-  `description` text DEFAULT NULL,
-  `details` JSON DEFAULT NULL,
-  `ip_address` varchar(45) DEFAULT NULL,
-  `user_agent` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`log_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `activity_logs_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Create backup tables
-CREATE TABLE users_backup AS SELECT * FROM users;
-CREATE TABLE patients_backup AS SELECT * FROM patients;
-CREATE TABLE appointments_backup AS SELECT * FROM appointments;
-CREATE TABLE healthworkers_backup AS SELECT * FROM healthworkers;
-CREATE TABLE households_backup AS SELECT * FROM households;
-
--- Create reference tables
-CREATE TABLE `appointment_status` (
-  `status_id` int(11) NOT NULL AUTO_INCREMENT,
-  `status_name` varchar(50) NOT NULL,
-  PRIMARY KEY (`status_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-INSERT INTO appointment_status (status_name) VALUES
-('Scheduled'), ('Completed'), ('Cancelled');
-
-CREATE TABLE `blood_types` (
-  `blood_type_id` int(11) NOT NULL AUTO_INCREMENT,
-  `blood_type` varchar(5) NOT NULL,
-  PRIMARY KEY (`blood_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-INSERT INTO blood_types (blood_type) VALUES
-('A+'), ('A-'), ('B+'), ('B-'), ('AB+'), ('AB-'), ('O+'), ('O-');
-
--- Modify users table
-ALTER TABLE `users`
-ADD COLUMN `email` varchar(100) DEFAULT NULL,
-ADD COLUMN `contact_number` varchar(15) DEFAULT NULL,
-ADD COLUMN `full_name` varchar(100) DEFAULT NULL,
-ADD COLUMN `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-ADD COLUMN `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-ADD COLUMN `deleted_at` timestamp NULL DEFAULT NULL;
-
--- Add security columns to users table
-ALTER TABLE `users`
-ADD COLUMN `two_factor_secret` varchar(32) DEFAULT NULL,
-ADD COLUMN `two_factor_enabled` BOOLEAN DEFAULT FALSE,
-ADD COLUMN `password_reset_token` varchar(100) DEFAULT NULL,
-ADD COLUMN `password_reset_expires` DATETIME DEFAULT NULL,
-ADD COLUMN `failed_login_attempts` INT DEFAULT 0,
-ADD COLUMN `last_login_attempt` DATETIME DEFAULT NULL,
-ADD COLUMN `account_locked_until` DATETIME DEFAULT NULL,
-ADD COLUMN `password_changed_at` DATETIME DEFAULT NULL,
-ADD COLUMN `force_password_change` BOOLEAN DEFAULT FALSE,
-ADD COLUMN `last_password_reset` DATETIME DEFAULT NULL,
-ADD COLUMN `status` ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
-ADD COLUMN `api_key` VARCHAR(64) DEFAULT NULL,
-ADD COLUMN `api_key_expires` DATETIME DEFAULT NULL;
-
--- Modify appointments table
-ALTER TABLE `appointments`
-DROP COLUMN `status`,
-ADD COLUMN `status_id` int(11) NOT NULL DEFAULT 1,
-ADD COLUMN `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-ADD COLUMN `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-ADD COLUMN `deleted_at` timestamp NULL DEFAULT NULL,
-ADD CONSTRAINT `appointments_status_fk` FOREIGN KEY (`status_id`)
-    REFERENCES `appointment_status` (`status_id`);
-
--- Modify patients table
-ALTER TABLE `patients`
-ADD COLUMN `blood_type_id` int(11) DEFAULT NULL,
-ADD COLUMN `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-ADD COLUMN `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-ADD COLUMN `deleted_at` timestamp NULL DEFAULT NULL,
-ADD COLUMN `version` INT DEFAULT 1,
-ADD CONSTRAINT `patients_blood_type_fk` FOREIGN KEY (`blood_type_id`)
-    REFERENCES `blood_types` (`blood_type_id`);
-
--- Create security-related tables
-CREATE TABLE `password_history` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `user_id` int(11) NOT NULL,
-    `password_hash` varchar(255) NOT NULL,
-    `created_at` datetime DEFAULT current_timestamp(),
-    PRIMARY KEY (`id`),
-    KEY `user_id` (`user_id`),
-    CONSTRAINT `password_history_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `security_audit_log` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `user_id` int(11) DEFAULT NULL,
-    `event_type` enum('login','logout','password_change','failed_login','permission_change','api_access') NOT NULL,
-    `ip_address` varchar(45) DEFAULT NULL,
-    `user_agent` varchar(255) DEFAULT NULL,
-    `details` JSON DEFAULT NULL,
-    `created_at` datetime DEFAULT current_timestamp(),
-    PRIMARY KEY (`id`),
-    KEY `user_id` (`user_id`),
-    CONSTRAINT `security_audit_log_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Create RBAC tables
-CREATE TABLE `permissions` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `name` varchar(50) NOT NULL,
-    `description` text DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_permission_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `role_permissions` (
-    `role` enum('Healthworker','Nurse','Doctor') NOT NULL,
-    `permission_id` int(11) NOT NULL,
-    PRIMARY KEY (`role`, `permission_id`),
-    KEY `permission_id` (`permission_id`),
-    CONSTRAINT `role_permissions_permission_fk` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Insert initial permissions
-INSERT INTO permissions (name, description) VALUES
-('view_patient_records', 'Can view patient records'),
-('edit_patient_records', 'Can edit patient records'),
-('schedule_appointments', 'Can schedule appointments'),
-('prescribe_medication', 'Can prescribe medication'),
-('view_reports', 'Can view reports'),
-('manage_users', 'Can manage user accounts');
-
--- Assign initial role permissions
-INSERT INTO role_permissions (role, permission_id) VALUES
-('Doctor', (SELECT id FROM permissions WHERE name = 'view_patient_records')),
-('Doctor', (SELECT id FROM permissions WHERE name = 'edit_patient_records')),
-('Doctor', (SELECT id FROM permissions WHERE name = 'prescribe_medication')),
-('Nurse', (SELECT id FROM permissions WHERE name = 'view_patient_records')),
-('Nurse', (SELECT id FROM permissions WHERE name = 'schedule_appointments')),
-('Healthworker', (SELECT id FROM permissions WHERE name = 'view_patient_records')),
-('Healthworker', (SELECT id FROM permissions WHERE name = 'schedule_appointments'));
-
--- Add indexes for performance
-CREATE INDEX idx_appointment_date ON appointments(appointment_date);
-CREATE INDEX idx_patient_name ON patients(full_name);
-CREATE INDEX idx_household_barangay ON households(barangay);
-CREATE INDEX idx_audit_timestamp ON activity_logs(created_at);
-CREATE INDEX idx_patient_household ON patients(household_id, is_household_head);
-CREATE INDEX idx_appointment_status_date ON appointments(status_id, appointment_date, deleted_at);
-CREATE INDEX idx_patient_metrics ON healthmetrics(patient_id, checkup_date);
-CREATE INDEX idx_consultation_date ON consultations(consultation_date, appointment_id);
-CREATE INDEX idx_household_location ON households(barangay, address(100));
-CREATE INDEX idx_patient_search ON patients(full_name, date_of_birth, deleted_at);
-CREATE INDEX idx_concurrent_appointments ON appointments(worker_id, appointment_date, deleted_at);
-
--- Add triggers for data integrity and auditing
-DELIMITER $$
-
-CREATE TRIGGER before_user_update
-BEFORE UPDATE ON users
-FOR EACH ROW
-BEGIN
-    IF NEW.password != OLD.password THEN
-        SET NEW.password_changed_at = NOW();
-
-        -- Store password history
-        INSERT INTO password_history (user_id, password_hash)
-        VALUES (OLD.id, OLD.password);
-    END IF;
-END$$
-
-CREATE TRIGGER before_patient_delete
-BEFORE DELETE ON patients
-FOR EACH ROW
-BEGIN
-    UPDATE patients SET deleted_at = NOW()
-    WHERE patient_id = OLD.patient_id;
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Use soft delete instead';
-END$$
-
-DELIMITER ;
-
--- Set global transaction isolation level
-SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-
--- Enable strict mode
-SET sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
-
-CREATE TABLE `audit_logs` (
-  `log_id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `action` varchar(50) NOT NULL,
-  `table_name` varchar(50) NOT NULL,
-  `record_id` int(11) NOT NULL,
-  `changes` JSON,
-  `timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`log_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `audit_logs_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-DELIMITER $$
-
--- Audit trigger for patients
-CREATE TRIGGER `after_patient_update` AFTER UPDATE ON `patients`
-FOR EACH ROW
-BEGIN
-    INSERT INTO audit_logs (user_id, action, table_name, record_id, changes)
-    VALUES (
-        @current_user_id, -- This should be set in your application
-        'UPDATE',
-        'patients',
-        NEW.patient_id,
-        JSON_OBJECT(
-            'old_data', JSON_OBJECT(
-                'full_name', OLD.full_name,
-                'contact_number', OLD.contact_number,
-                'email', OLD.email
-            ),
-            'new_data', JSON_OBJECT(
-                'full_name', NEW.full_name,
-                'contact_number', NEW.contact_number,
-                'email', NEW.email
-            )
-        )
-    );
-END$$
-
-DELIMITER ;
-
-CREATE VIEW `view_patient_details` AS
-SELECT
-    p.patient_id,
-    p.full_name,
-    p.gender,
-    p.date_of_birth,
-    p.contact_number,
-    p.email,
-    bt.blood_type,
-    h.household_head,
-    h.address,
-    h.barangay
-FROM patients p
-JOIN households h ON p.household_id = h.household_id
-LEFT JOIN blood_types bt ON p.blood_type_id = bt.blood_type_id
-WHERE p.deleted_at IS NULL;
-
-CREATE VIEW `view_upcoming_appointments` AS
-SELECT
-    a.appointment_id,
-    p.full_name AS patient_name,
-    hw.full_name AS health_worker,
-    a.appointment_date,
-    a.purpose,
-    aps.status_name
-FROM appointments a
-JOIN patients p ON a.patient_id = p.patient_id
-JOIN healthworkers hw ON a.worker_id = hw.worker_id
-JOIN appointment_status aps ON a.status_id = aps.status_id
-WHERE a.appointment_date >= CURDATE()
-AND a.deleted_at IS NULL
-ORDER BY a.appointment_date;
-
-DELIMITER $$
-
--- Optimized patient history with pagination
-CREATE PROCEDURE GetPatientHistoryPaginated(
-    IN p_patient_id INT,
-    IN p_page INT,
-    IN p_limit INT
-)
-BEGIN
-    DECLARE v_offset INT;
-    SET v_offset = (p_page - 1) * p_limit;
-
-    -- Get total counts first
-    SELECT
-        COUNT(DISTINCT a.appointment_id) as total_appointments,
-        COUNT(DISTINCT c.consultation_id) as total_consultations,
-        COUNT(DISTINCT h.metric_id) as total_metrics
-    FROM patients p
-    LEFT JOIN appointments a ON p.patient_id = a.patient_id AND a.deleted_at IS NULL
-    LEFT JOIN consultations c ON a.appointment_id = c.appointment_id
-    LEFT JOIN healthmetrics h ON p.patient_id = h.patient_id
-    WHERE p.patient_id = p_patient_id;
-
-    -- Recent appointments with consultations
-    SELECT
-        a.appointment_id,
-        a.appointment_date,
-        aps.status_name,
-        hw.full_name as health_worker,
-        c.findings,
-        c.prescription
-    FROM appointments a
-    FORCE INDEX (idx_appointment_status_date)
-    JOIN appointment_status aps ON a.status_id = aps.status_id
-    JOIN healthworkers hw ON a.worker_id = hw.worker_id
-    LEFT JOIN consultations c ON a.appointment_id = c.appointment_id
-    WHERE a.patient_id = p_patient_id
-    AND a.deleted_at IS NULL
-    ORDER BY a.appointment_date DESC
-    LIMIT p_limit OFFSET v_offset;
-
-    -- Health metrics with statistical analysis
-    SELECT
-        AVG(weight) as avg_weight,
-        MAX(weight) as max_weight,
-        MIN(weight) as min_weight,
-        AVG(SUBSTRING_INDEX(blood_pressure, '/', 1)) as avg_systolic,
-        AVG(SUBSTRING_INDEX(blood_pressure, '/', -1)) as avg_diastolic
-    FROM healthmetrics
-    FORCE INDEX (idx_patient_metrics)
-    WHERE patient_id = p_patient_id;
-END$$
-
--- Optimized appointment scheduling with conflict checking
-CREATE PROCEDURE ScheduleAppointmentSafe(
-    IN p_patient_id INT,
-    IN p_worker_id INT,
-    IN p_date DATETIME,
-    IN p_purpose TEXT,
-    OUT p_success BOOLEAN,
-    OUT p_message VARCHAR(255)
-)
-BEGIN
-    DECLARE v_conflict INT;
-
-    START TRANSACTION;
-
-    -- Check for existing appointments in the same time slot (+-30 minutes)
-    SELECT COUNT(*) INTO v_conflict
-    FROM appointments a
-    FORCE INDEX (idx_appointment_status_date)
-    WHERE a.worker_id = p_worker_id
-    AND a.deleted_at IS NULL
-    AND a.appointment_date BETWEEN p_date - INTERVAL 30 MINUTE
-                              AND p_date + INTERVAL 30 MINUTE;
-
-    IF v_conflict > 0 THEN
-        SET p_success = FALSE;
-        SET p_message = 'Time slot conflict detected';
-        ROLLBACK;
-    ELSE
-        INSERT INTO appointments (
-            patient_id, worker_id, appointment_date,
-            purpose, status_id, created_at
-        )
-        VALUES (
-            p_patient_id, p_worker_id, p_date,
-            p_purpose, 1, NOW()
-        );
-
-        SET p_success = TRUE;
-        SET p_message = 'Appointment scheduled successfully';
-        COMMIT;
-    END IF;
-END$$
-
--- Advanced analytics procedure
-CREATE PROCEDURE GetHealthcenterAnalytics(IN p_date_from DATE, IN p_date_to DATE)
-BEGIN
-    -- Appointment statistics
-    WITH AppointmentStats AS (
-        SELECT
-            DATE_FORMAT(appointment_date, '%Y-%m') as month,
-            COUNT(*) as total_appointments,
-            SUM(CASE WHEN status_id = 2 THEN 1 ELSE 0 END) as completed,
-            SUM(CASE WHEN status_id = 3 THEN 1 ELSE 0 END) as cancelled
-        FROM appointments
-        FORCE INDEX (idx_appointment_status_date)
-        WHERE appointment_date BETWEEN p_date_from AND p_date_to
-        AND deleted_at IS NULL
-        GROUP BY DATE_FORMAT(appointment_date, '%Y-%m')
-    )
-    SELECT
-        month,
-        total_appointments,
-        completed,
-        cancelled,
-        ROUND((completed/total_appointments) * 100, 2) as completion_rate
-    FROM AppointmentStats;
-
-    -- Barangay health metrics
-    WITH BarangayMetrics AS (
-        SELECT
-            h.barangay,
-            COUNT(DISTINCT p.patient_id) as total_patients,
-            COUNT(DISTINCT a.appointment_id) as total_appointments,
-            COUNT(DISTINCT CASE WHEN p.is_household_head = 1 THEN p.household_id END) as total_households
-        FROM households h
-        FORCE INDEX (idx_household_location)
-        LEFT JOIN patients p ON h.household_id = p.household_id
-        LEFT JOIN appointments a ON p.patient_id = a.patient_id
-        WHERE p.deleted_at IS NULL
-        GROUP BY h.barangay
-    )
-    SELECT
-        barangay,
-        total_patients,
-        total_appointments,
-        total_households,
-        ROUND(total_appointments/total_patients, 2) as appointments_per_patient
-    FROM BarangayMetrics
-    ORDER BY total_patients DESC;
-END$$
-
--- Materialized-like view for patient summary (refresh periodically)
-CREATE TABLE `patient_summary_cache` (
-    `patient_id` int(11) NOT NULL,
-    `full_name` varchar(100),
-    `age` int,
-    `last_appointment_date` datetime,
-    `total_appointments` int,
-    `avg_blood_pressure` varchar(10),
-    `last_updated` timestamp,
-    PRIMARY KEY (`patient_id`),
-    KEY `idx_last_updated` (`last_updated`)
-);
-
--- Procedure to refresh patient summary
-DELIMITER $$
-CREATE PROCEDURE RefreshPatientSummary()
-BEGIN
-    TRUNCATE TABLE patient_summary_cache;
-
-    INSERT INTO patient_summary_cache
-    SELECT
-        p.patient_id,
-        p.full_name,
-        TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) as age,
-        MAX(a.appointment_date) as last_appointment_date,
-        COUNT(DISTINCT a.appointment_id) as total_appointments,
-        (
-            SELECT CONCAT(
-                ROUND(AVG(SUBSTRING_INDEX(blood_pressure, '/', 1))), '/',
-                ROUND(AVG(SUBSTRING_INDEX(blood_pressure, '/', -1)))
-            )
-            FROM healthmetrics hm
-            WHERE hm.patient_id = p.patient_id
-        ) as avg_blood_pressure,
-        NOW() as last_updated
-    FROM patients p
-    LEFT JOIN appointments a ON p.patient_id = a.patient_id
-    WHERE p.deleted_at IS NULL
-    GROUP BY p.patient_id, p.full_name, p.date_of_birth;
-END$$
-DELIMITER ;
-
--- Efficient view for upcoming appointments
-CREATE OR REPLACE VIEW `view_upcoming_appointments_optimized` AS
-SELECT
-    a.appointment_id,
-    p.full_name AS patient_name,
-    hw.full_name AS health_worker,
-    a.appointment_date,
-    a.purpose,
-    aps.status_name,
-    h.barangay
-FROM appointments a
-FORCE INDEX (idx_appointment_status_date)
-JOIN patients p FORCE INDEX (idx_patient_search)
-    ON a.patient_id = p.patient_id
-JOIN healthworkers hw ON a.worker_id = hw.worker_id
-JOIN appointment_status aps ON a.status_id = aps.status_id
-JOIN households h FORCE INDEX (idx_household_location)
-    ON p.household_id = h.household_id
-WHERE a.appointment_date >= CURDATE()
-AND a.deleted_at IS NULL
-AND p.deleted_at IS NULL;
-
-DELIMITER $$
-
-CREATE PROCEDURE SearchPatients(
-    IN p_search_term VARCHAR(100),
-    IN p_barangay VARCHAR(100),
-    IN p_age_from INT,
-    IN p_age_to INT,
-    IN p_page INT,
-    IN p_limit INT
-)
-BEGIN
-    DECLARE v_offset INT;
-    SET v_offset = (p_page - 1) * p_limit;
-
-    WITH FilteredPatients AS (
-        SELECT
-            p.patient_id,
-            p.full_name,
-            p.gender,
-            p.date_of_birth,
-            h.barangay,
-            h.address,
-            TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) as age,
-            COUNT(*) OVER() as total_count
-        FROM patients p
-        FORCE INDEX (idx_patient_search)
-        JOIN households h FORCE INDEX (idx_household_location)
-            ON p.household_id = h.household_id
-        WHERE p.deleted_at IS NULL
-        AND (
-            p.full_name LIKE CONCAT('%', p_search_term, '%')
-            OR p.contact_number LIKE CONCAT('%', p_search_term, '%')
-            OR p.email LIKE CONCAT('%', p_search_term, '%')
-        )
-        AND (p_barangay IS NULL OR h.barangay = p_barangay)
-        AND (
-            p_age_from IS NULL
-            OR TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) >= p_age_from
-        )
-        AND (
-            p_age_to IS NULL
-            OR TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) <= p_age_to
-        )
-    )
-    SELECT
-        fp.*,
-        ps.last_appointment_date,
-        ps.total_appointments,
-        ps.avg_blood_pressure
-    FROM FilteredPatients fp
-    LEFT JOIN patient_summary_cache ps ON fp.patient_id = ps.patient_id
-    ORDER BY fp.full_name
-    LIMIT p_limit OFFSET v_offset;
-END$$
-
-DELIMITER ;
-
---
--- Transaction Management and Concurrency Control
---
-
--- Set global transaction isolation level
-SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-
--- Enable strict mode for better data integrity
-SET sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
-
---
--- Transaction-Safe Stored Procedures
---
-
-DELIMITER $$
-
--- Appointment scheduling with transaction safety
-CREATE PROCEDURE ScheduleAppointmentTransactional(
-    IN p_patient_id INT UNSIGNED,
-    IN p_worker_id INT UNSIGNED,
-    IN p_appointment_date DATETIME,
-    IN p_purpose VARCHAR(255),
-    OUT p_success BOOLEAN,
-    OUT p_message VARCHAR(255)
-)
-BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        SET p_success = FALSE;
-        SET p_message = 'Transaction failed';
-    END;
-
-    START TRANSACTION;
-
-    -- Lock check for concurrent appointments
-    SELECT COUNT(*) INTO @conflict_count
-    FROM appointments
-    WHERE worker_id = p_worker_id
-    AND appointment_date BETWEEN
-        p_appointment_date - INTERVAL 30 MINUTE AND
-        p_appointment_date + INTERVAL 30 MINUTE
-    AND deleted_at IS NULL
-    FOR UPDATE;
-
-    IF @conflict_count > 0 THEN
-        SET p_success = FALSE;
-        SET p_message = 'Time slot conflict detected';
-        ROLLBACK;
-    ELSE
-        INSERT INTO appointments (
-            patient_id,
-            worker_id,
-            appointment_date,
-            purpose,
-            status_id,
-            created_at
-        ) VALUES (
-            p_patient_id,
-            p_worker_id,
-            p_appointment_date,
-            p_purpose,
-            1, -- Scheduled status
-            NOW()
-        );
-
-        -- Update cache table
-        UPDATE patient_summary_cache
-        SET
-            last_appointment_date = p_appointment_date,
-            total_appointments = total_appointments + 1,
-            last_updated = NOW()
-        WHERE patient_id = p_patient_id;
-
-        SET p_success = TRUE;
-        SET p_message = 'Appointment scheduled successfully';
-        COMMIT;
-    END IF;
-END$$
-
--- Consultation recording with transaction safety
-CREATE PROCEDURE RecordConsultationTransactional(
-    IN p_appointment_id INT UNSIGNED,
-    IN p_chief_complaint TEXT,
-    IN p_diagnosis TEXT,
-    IN p_treatment_plan TEXT,
-    IN p_prescription TEXT,
-    IN p_notes TEXT,
-    OUT p_success BOOLEAN
-)
-BEGIN
-    DECLARE v_patient_id INT UNSIGNED;
-
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        SET p_success = FALSE;
-    END;
-
-    START TRANSACTION;
-
-    -- Lock the appointment record
-    SELECT patient_id INTO v_patient_id
-    FROM appointments
-    WHERE appointment_id = p_appointment_id
-    FOR UPDATE;
-
-    INSERT INTO consultations (
-        appointment_id,
-        chief_complaint,
-        diagnosis,
-        treatment_plan,
-        prescription,
-        notes,
-        created_at
-    ) VALUES (
-        p_appointment_id,
-        p_chief_complaint,
-        p_diagnosis,
-        p_treatment_plan,
-        p_prescription,
-        p_notes,
-        NOW()
-    );
-
-    -- Update appointment status
-    UPDATE appointments
-    SET
-        status_id = 2, -- Completed
-        updated_at = NOW()
-    WHERE appointment_id = p_appointment_id;
-
-    SET p_success = TRUE;
-    COMMIT;
-END$$
-
--- Health metrics recording with transaction safety
-CREATE PROCEDURE RecordHealthMetricsTransactional(
-    IN p_patient_id INT UNSIGNED,
-    IN p_recorded_by INT UNSIGNED,
-    IN p_bp_systolic SMALLINT UNSIGNED,
-    IN p_bp_diastolic SMALLINT UNSIGNED,
-    IN p_heart_rate SMALLINT UNSIGNED,
-    IN p_temperature DECIMAL(4,1),
-    IN p_weight_kg DECIMAL(5,2),
-    IN p_height_cm SMALLINT UNSIGNED,
-    IN p_notes TEXT,
-    OUT p_success BOOLEAN
-)
-BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        SET p_success = FALSE;
-    END;
-
-    START TRANSACTION;
-
-    -- Lock patient record
-    SELECT 1 FROM patients
-    WHERE patient_id = p_patient_id
-    FOR UPDATE;
-
-    INSERT INTO healthmetrics (
-        patient_id,
-        recorded_by,
-        checkup_date,
-        blood_pressure_systolic,
-        blood_pressure_diastolic,
-        heart_rate,
-        temperature,
-        weight_kg,
-        height_cm,
-        notes
-    ) VALUES (
-        p_patient_id,
-        p_recorded_by,
-        CURDATE(),
-        p_bp_systolic,
-        p_bp_diastolic,
-        p_heart_rate,
-        p_temperature,
-        p_weight_kg,
-        p_height_cm,
-        p_notes
-    );
-
-    -- Update cache with new averages
-    UPDATE patient_summary_cache
-    SET
-        avg_systolic = (
-            SELECT AVG(blood_pressure_systolic)
-            FROM healthmetrics
-            WHERE patient_id = p_patient_id
-        ),
-        avg_diastolic = (
-            SELECT AVG(blood_pressure_diastolic)
-            FROM healthmetrics
-            WHERE patient_id = p_patient_id
-        ),
-        last_updated = NOW()
-    WHERE patient_id = p_patient_id;
-
-    SET p_success = TRUE;
-    COMMIT;
-END$$
-
--- Dead lock prevention procedure
-CREATE PROCEDURE UpdatePatientAndHouseholdTransactional(
-    IN p_patient_id INT UNSIGNED,
-    IN p_household_id INT UNSIGNED,
-    IN p_patient_data JSON,
-    IN p_household_data JSON,
-    OUT p_success BOOLEAN
-)
-BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        SET p_success = FALSE;
-    END;
-
-    START TRANSACTION;
-
-    -- Always update tables in the same order to prevent deadlocks
-    UPDATE households
-    SET
-        address = JSON_UNQUOTE(JSON_EXTRACT(p_household_data, '$.address')),
-        updated_at = NOW()
-    WHERE household_id = p_household_id;
-
-    UPDATE patients
-    SET
-        first_name = JSON_UNQUOTE(JSON_EXTRACT(p_patient_data, '$.first_name')),
-        last_name = JSON_UNQUOTE(JSON_EXTRACT(p_patient_data, '$.last_name')),
-        updated_at = NOW()
-    WHERE patient_id = p_patient_id;
-
-    SET p_success = TRUE;
-    COMMIT;
-END$$
-
--- Optimistic locking example
-CREATE PROCEDURE UpdatePatientOptimisticLock(
-    IN p_patient_id INT UNSIGNED,
-    IN p_version INT,
-    IN p_data JSON,
-    OUT p_success BOOLEAN
-)
-BEGIN
-    DECLARE current_version INT;
-
-    START TRANSACTION;
-
-    SELECT version INTO current_version
-    FROM patients
-    WHERE patient_id = p_patient_id;
-
-    IF current_version = p_version THEN
-        UPDATE patients
-        SET
-            first_name = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.first_name')),
-            last_name = JSON_UNQUOTE(JSON_EXTRACT(p_data, '$.last_name')),
-            version = version + 1,
-            updated_at = NOW()
-        WHERE patient_id = p_patient_id;
-
-        SET p_success = TRUE;
-    ELSE
-        SET p_success = FALSE;
-    END IF;
-
-    COMMIT;
-END$$
-
-DELIMITER ;
-
--- -----------------------------------------------------
--- Additional Indexes for Transaction Performance
--- -----------------------------------------------------
--- Drop the index if it exists, then recreate it
-DROP INDEX IF EXISTS idx_concurrent_appointments ON appointments;
-ALTER TABLE appointments ADD INDEX idx_concurrent_appointments (worker_id, appointment_date, deleted_at);
-ALTER TABLE healthmetrics ADD INDEX idx_patient_metrics_date (patient_id, checkup_date);
-
--- -----------------------------------------------------
--- Transaction Monitoring Views
--- -----------------------------------------------------
-CREATE OR REPLACE VIEW v_active_transactions AS
-SELECT
-    trx_id,
-    trx_state,
-    trx_started,
-    trx_requested_lock_id,
-    trx_wait_started,
-    trx_weight,
-    trx_mysql_thread_id,
-    trx_tables_in_use,
-    trx_tables_locked
-FROM information_schema.innodb_trx;
-
-CREATE OR REPLACE VIEW v_lock_waits AS
-SELECT
-    requesting_trx_id,
-    requested_lock_id,
-    blocking_trx_id,
-    blocking_lock_id
-FROM information_schema.innodb_lock_waits;
-
--- -----------------------------------------------------
--- Deadlock Monitoring Trigger
--- -----------------------------------------------------
-DELIMITER $$
-
-CREATE TRIGGER after_deadlock_detected
-AFTER INSERT ON audit_logs
-FOR EACH ROW
-BEGIN
-    IF NEW.action = 'DEADLOCK_DETECTED' THEN
-        -- Log to separate deadlock table
-        INSERT INTO deadlock_incidents (
-            timestamp,
-            affected_table,
-            transaction_id,
-            error_message
-        ) VALUES (
-            NOW(),
-            NEW.table_name,
-            NEW.record_id,
-            NEW.changes
-        );
-    END IF;
-END$$
-
-DELIMITER ;
-
--- -----------------------------------------------------
--- Security Enhancements
--- -----------------------------------------------------
-
--- Create security schema for security-related tables
-CREATE SCHEMA IF NOT EXISTS security;
-
-
--- Add security-related indexes
-ALTER TABLE `users`
-ADD INDEX `idx_email` (`email`),
-ADD INDEX `idx_status` (`status`),
-ADD INDEX `idx_api_key` (`api_key`);
-
--- -----------------------------------------------------
--- API Access Control
--- -----------------------------------------------------
-CREATE TABLE `api_keys` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT NOT NULL,
-    `api_key` VARCHAR(64) NOT NULL,
-    `name` VARCHAR(50),
-    `permissions` JSON,
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `expires_at` DATETIME,
-    `last_used` DATETIME,
-    `is_active` BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`),
-    UNIQUE KEY `unique_api_key` (`api_key`)
-) ENGINE=InnoDB;
-
--- Security Procedures
-
--- Secure Password Change Procedure
-DELIMITER $$
-
-CREATE PROCEDURE ChangeUserPassword(
-    IN p_user_id INT,
-    IN p_new_password VARCHAR(255),
-    IN p_current_password VARCHAR(255)
-)
-BEGIN
-    DECLARE v_current_hash VARCHAR(255);
-    DECLARE v_count INT;
-    
-    -- Get current password hash
-    SELECT password INTO v_current_hash
-    FROM users
-    WHERE id = p_user_id;
-    
-    -- Verify current password
-    IF v_current_hash = p_current_password THEN
-        -- Update password
-        UPDATE users
-        SET
-            password = p_new_password,
-            password_changed_at = NOW()
-        WHERE id = p_user_id;
-        
-        -- Store in password history if table exists
-        SELECT COUNT(*) INTO v_count FROM information_schema.tables 
-        WHERE table_schema = 'db_healthcenter' AND table_name = 'password_history';
-        
-        IF v_count > 0 THEN
-            INSERT INTO password_history (user_id, password_hash)
-            VALUES (p_user_id, p_current_password);
-        END IF;
-        
-        -- Log the change if table exists
-        SELECT COUNT(*) INTO v_count FROM information_schema.tables 
-        WHERE table_schema = 'db_healthcenter' AND table_name = 'security_audit_log';
-        
-        IF v_count > 0 THEN
-            INSERT INTO security_audit_log (user_id, event_type, details)
-            VALUES (p_user_id, 'password_change', '{"method": "user_initiated"}');
-        END IF;
-    END IF;
-END$$
-
-DELIMITER ;
-
--- Login Attempt Handler
-DELIMITER $$
-
-CREATE PROCEDURE HandleLoginAttempt(
-    IN p_username VARCHAR(50),
-    IN p_password VARCHAR(255),
-    IN p_ip_address VARCHAR(45),
-    IN p_user_agent VARCHAR(255)
-)
-BEGIN
-    DECLARE v_user_id INT;
-    DECLARE v_failed_attempts INT;
-    DECLARE v_stored_password VARCHAR(255);
-    DECLARE v_count INT;
-    
-    -- Get user details
-    SELECT id, failed_login_attempts, password 
-    INTO v_user_id, v_failed_attempts, v_stored_password
-    FROM users
-    WHERE username = p_username;
-    
-    -- Check if user exists
-    IF v_user_id IS NOT NULL THEN
-        -- Check if account is locked
-        SELECT COUNT(*) INTO v_count 
-        FROM users 
-        WHERE id = v_user_id 
-        AND account_locked_until IS NOT NULL 
-        AND account_locked_until > NOW();
-        
-        IF v_count > 0 THEN
-            -- Account is locked
-            UPDATE users
-            SET last_login_attempt = NOW()
-            WHERE id = v_user_id;
-            
-            -- Log failed attempt
-            INSERT INTO security_audit_log (user_id, event_type, ip_address, user_agent)
-            VALUES (v_user_id, 'failed_login', p_ip_address, p_user_agent);
-        ELSE
-            -- Verify password
-            IF v_stored_password = p_password THEN
-                -- Successful login
-                UPDATE users
-                SET 
-                    failed_login_attempts = 0,
-                    last_login_attempt = NOW(),
-                    account_locked_until = NULL
-                WHERE id = v_user_id;
-                
-                -- Log successful login
-                INSERT INTO security_audit_log (user_id, event_type, ip_address, user_agent)
-                VALUES (v_user_id, 'login', p_ip_address, p_user_agent);
-            ELSE
-                -- Failed login
-                UPDATE users
-                SET
-                    failed_login_attempts = failed_login_attempts + 1,
-                    last_login_attempt = NOW(),
-                    account_locked_until = CASE
-                        WHEN failed_login_attempts + 1 >= 5 THEN DATE_ADD(NOW(), INTERVAL 30 MINUTE)
-                        ELSE NULL
-                    END
-                WHERE id = v_user_id;
-                
-                -- Log failed attempt
-                INSERT INTO security_audit_log (user_id, event_type, ip_address, user_agent)
-                VALUES (v_user_id, 'failed_login', p_ip_address, p_user_agent);
-            END IF;
-        END IF;
-    END IF;
-END$$
-
-DELIMITER ;
-
-DELIMITER $$
--- API Key Management
-CREATE PROCEDURE GenerateApiKey(
-    IN p_user_id INT,
-    IN p_name VARCHAR(50),
-    IN p_permissions JSON,
-    IN p_validity_days INT,
-    OUT p_api_key VARCHAR(64)
-)
-BEGIN
-    SET p_api_key = SHA2(CONCAT(UUID(), RAND()), 256);
-
-    INSERT INTO api_keys (
-        user_id,
-        api_key,
-        name,
-        permissions,
-        expires_at
-    ) VALUES (
-        p_user_id,
-        p_api_key,
-        p_name,
-        p_permissions,
-        DATE_ADD(NOW(), INTERVAL p_validity_days DAY)
-    );
-END$$
-
-DELIMITER ;
-
--- -----------------------------------------------------
--- Initial Security Data - Insert only if not exists
-INSERT IGNORE INTO permissions (name, description) VALUES
-('view_patient_records', 'Can view patient records'),
-('edit_patient_records', 'Can edit patient records'),
-('schedule_appointments', 'Can schedule appointments'),
-('prescribe_medication', 'Can prescribe medication'),
-('view_reports', 'Can view reports'),
-('manage_users', 'Can manage user accounts');
-
--- Role permissions - Insert only if not exists
-INSERT IGNORE INTO role_permissions (role, permission_id) VALUES
-('Doctor', (SELECT id FROM permissions WHERE name = 'view_patient_records')),
-('Doctor', (SELECT id FROM permissions WHERE name = 'edit_patient_records')),
-('Doctor', (SELECT id FROM permissions WHERE name = 'prescribe_medication')),
-('Nurse', (SELECT id FROM permissions WHERE name = 'view_patient_records')),
-('Nurse', (SELECT id FROM permissions WHERE name = 'schedule_appointments')),
-('Healthworker', (SELECT id FROM permissions WHERE name = 'view_patient_records')),
-('Healthworker', (SELECT id FROM permissions WHERE name = 'schedule_appointments'));
-
--- 
--- Security Views
--- 
-CREATE OR REPLACE VIEW v_user_permissions AS
-SELECT
-    u.username,
-    u.role,
-    GROUP_CONCAT(p.name) as permissions
-FROM users u
-JOIN role_permissions rp ON u.role = rp.role
-JOIN permissions p ON rp.permission_id = p.id
-GROUP BY u.username, u.role;
-
-CREATE OR REPLACE VIEW v_security_audit AS
-SELECT
-    sa.event_type,
-    sa.ip_address,
-    u.username,
-    sa.created_at,
-    sa.details
-FROM security_audit_log sa
-JOIN users u ON sa.user_id = u.id;
 
