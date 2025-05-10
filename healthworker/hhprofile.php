@@ -10,6 +10,11 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
 $username = $_SESSION['username'];
 $search = $_GET['search'] ?? '';
 
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$records_per_page = 4;
+$offset = ($page - 1) * $records_per_page;
+
+
 if (isset($_POST['logout'])) {
     session_destroy();
     header("Location: ../login.php");
@@ -49,6 +54,25 @@ $conn = $database->getConnection();
                     <li class="nav-item">
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'hhprofile.php' ? 'active' : ''; ?>" href="hhprofile.php">Household Profiles</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'medications.php' ? 'active' : ''; ?>" href="medications.php">Medications</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'barangay.php' ? 'active' : ''; ?>" href="barangay.php">Brgy. Map</a>
+                    </li>
+
+                    <!-- More dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle 
+                            <?php echo in_array(basename($_SERVER['PHP_SELF']), ['faqs.php', 'aboutus.php']) ? 'active' : ''; ?>" 
+                            href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            More
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="faqs.php">FAQs</a></li>
+                            <li><a class="dropdown-item" href="aboutus.php">About Us</a></li>
+                        </ul>
+                    </li>
                 </ul>
                     <!-- USER INFO WRAPPER -->
                     <div class="user-info">
@@ -73,9 +97,10 @@ $conn = $database->getConnection();
                         <!-- LOGOUT -->
                         <form method="POST" action="">
                             <button type="submit" name="logout" class="logout-btn">Logout</button>
-                        </form>
-                    </div>
-        </div>
+                                    </form>
+                                    </div>
+                                </div>
+                            </div>
     </div>
 </nav>
 
@@ -129,23 +154,30 @@ $conn = $database->getConnection();
                 <hr>
 
                 <h5>Household Member Details</h5>
-                <div class="mb-3">
-                <label for="member_name">Member Name:</label>
-                <input type="text" name="member_name" id="member_name" required><br>
+                <div id="householdMembersContainer">
+                    <div class="household-member mb-3 border p-3 rounded">
+                        <label>Member Name:</label>
+                        <input type="text" name="member_name[]" class="form-control mb-2" required>
 
-                <label for="relation">Relation to Head:</label>
-                <input type="text" name="relation" id="relation" required><br>
+                        <label>Relation to Head:</label>
+                        <input type="text" name="relation[]" class="form-control mb-2" required>
 
-                <label for="age">Age:</label>
-                <input type="number" name="age" id="age" required><br>
+                        <label>Age:</label>
+                        <input type="number" name="age[]" class="form-control mb-2" required>
 
-                <label for="sex">Sex:</label>
-                <select name="sex" id="sex" required>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select><br>
+                        <label>Sex:</label>
+                        <select name="sex[]" class="form-select mb-2" required>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+
+                        <button type="button" class="btn btn-danger btn-sm remove-member-btn">Remove</button>
+                    </div>
                 </div>
+                <button type="button" id="addMemberBtn" class="btn btn-success btn-sm mb-3">
+                    <i class="bi bi-plus-circle"></i> Add Member
+                </button>
 
                 <hr>
 
@@ -214,30 +246,44 @@ $conn = $database->getConnection();
             </thead>
             <tbody id="hhprofileTableBody">
                 <?php
-                // Fetch household profiles from the database
-                try {
-                    // Prepare and execute the query to fetch household profiles
-                    $sql = "
-                    SELECT 
-                        h.*, 
-                        mi.medical_condition, 
-                        mi.allergies, 
-                        ec.emergency_contact_name, 
-                        ec.emergency_contact_number, 
-                        ec.emergency_contact_relation
-                    FROM households h
-                    LEFT JOIN medical_information mi ON h.household_id = mi.household_id
-                    LEFT JOIN emergency_contacts ec ON h.household_id = ec.household_id
-                ";                
-                    $stmt = $conn->prepare($sql);
-                    $stmt->execute();
+try {
+    if ($search) {
+        // Call stored procedure to count total matching records
+        $count_stmt = $conn->prepare("CALL search_households_count(:search_term)");
+        $count_stmt->bindValue(':search_term', $search);
+        $count_stmt->execute();
+        $total_households = $count_stmt->fetchColumn();
+        $count_stmt->closeCursor();
 
-                    // Fetch the results
-                    $households = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                } catch (PDOException $e) {
-                    echo "Error: " . $e->getMessage();
-                    exit;
-                }
+        // Call stored procedure to fetch paginated results with search filter
+        $stmt = $conn->prepare("CALL search_households_paginated(:search_term, :limit_val, :offset_val)");
+        $stmt->bindValue(':search_term', $search);
+        $stmt->bindValue(':limit_val', $records_per_page, PDO::PARAM_INT);
+        $stmt->bindValue(':offset_val', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $households = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->closeCursor();
+    } else {
+        // Call stored procedure to count total records
+        $count_stmt = $conn->prepare("CALL get_total_households_count(@total_households)");
+        $count_stmt->execute();
+        $count_stmt->closeCursor();
+
+        $select_stmt = $conn->query("SELECT @total_households AS total_households");
+        $total_households = $select_stmt->fetchColumn();
+
+        // Call stored procedure to fetch paginated results without search filter
+        $stmt = $conn->prepare("CALL get_all_households_paginated(:limit_val, :offset_val)");
+        $stmt->bindValue(':limit_val', $records_per_page, PDO::PARAM_INT);
+        $stmt->bindValue(':offset_val', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $households = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->closeCursor();
+    }
+} catch (PDOException $e) {
+    echo "Error: " . $e->getMessage();
+    exit;
+}
                 ?>
                 <?php if (count($households) > 0): ?>
                     <?php foreach ($households as $h): ?>
@@ -258,57 +304,83 @@ $conn = $database->getConnection();
                                 <button class="btn btn-custom-edit btn-sm" data-bs-toggle="modal" data-bs-target="#editHouseholdModal<?= $h['household_id'] ?>">Edit</button>
 
                                 <!-- Delete Button -->
-                                <form method="post" action="hh_crud.php" class="d-inline" onsubmit="return confirm('Delete this household profile?');">
+                                <form method="post" class="d-inline" onsubmit="return confirm('Delete this household profile?');">
                                     <input type="hidden" name="delete_id" value="<?= $h['household_id'] ?>">
                                     <button type="submit" name="delete" class="btn btn-custom-delete btn-sm">Delete</button>
                                 </form>
                             </td>
 
-                            <!-- Modal for Viewing Household Details -->
-                            <div class="modal fade" id="descModal<?= $h['household_id'] ?>" tabindex="-1" aria-labelledby="descModalLabel" aria-hidden="true">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="descModalLabel">Household Details</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <h5>Head of Household: <?= htmlspecialchars($h['head_name']) ?></h5>
-                                            <p><strong>Purok:</strong> <?= htmlspecialchars($h['purok']) ?></p>
-                                            <p><strong>NIC Number:</strong> <?= htmlspecialchars($h['nic_number']) ?></p>
-                                            <p><strong>Number of Members:</strong> <?= htmlspecialchars($h['num_members']) ?></p>
+<!-- Modal for Viewing Household Details -->
+<div class="modal fade" id="descModal<?= $h['household_id'] ?>" tabindex="-1" aria-labelledby="descModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="descModalLabel">Household Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5>Head of Household: <?= htmlspecialchars($h['head_name']) ?></h5>
+                <p><strong>Purok:</strong> <?= htmlspecialchars($h['purok']) ?></p>
+                <p><strong>NIC Number:</strong> <?= htmlspecialchars($h['nic_number']) ?></p>
+                <p><strong>Number of Members:</strong> <?= htmlspecialchars($h['num_members']) ?></p>
 
-                                            <!-- Medical and Health Information -->
-                                            <h6><strong>Medical Condition:</strong></h6>
-                                            <p><?= htmlspecialchars($h['medical_condition']) ?: 'No conditions reported' ?></p>
-                                            <h6><strong>Allergies:</strong></h6>
-                                            <p><?= htmlspecialchars($h['allergies']) ?: 'No allergies reported' ?></p>
+                <!-- Medical and Health Information -->
+                <h5><strong>Medical Condition:</strong></h5>
+                <p><?= htmlspecialchars($h['medical_condition']) ?: 'No conditions reported' ?></p>
+                <h5><strong>Allergies:</strong></h5>
+                <p><?= htmlspecialchars($h['allergies']) ?: 'No allergies reported' ?></p>
 
-                                            <!-- Emergency Contact Information -->
-                                            <h6><strong>Emergency Contact</strong></h6>
-                                            <p><strong>Name:</strong> <?= htmlspecialchars($h['emergency_contact_name']) ?></p>
-                                            <p><strong>Contact Number:</strong> <?= htmlspecialchars($h['emergency_contact_number']) ?></p>
-                                            <p><strong>Relationship:</strong> <?= htmlspecialchars($h['emergency_contact_relation']) ?></p>
-                                            <p><strong>Consent Date:</strong> <?= htmlspecialchars($h['created_at']) ?></p>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Emergency Contact Information -->
+                <h5><strong>Emergency Contact</strong></h5>
+                <p><strong>Name:</strong> <?= htmlspecialchars($h['emergency_contact_name']) ?></p>
+                <p><strong>Contact Number:</strong> <?= htmlspecialchars($h['emergency_contact_number']) ?></p>
+                <p><strong>Relationship:</strong> <?= htmlspecialchars($h['emergency_contact_relation']) ?></p>
+                <p><strong>Consent Date:</strong> <?= htmlspecialchars($h['created_at']) ?></p>
+
+                <hr>
+                <h5><strong>Household Members</strong></h5>
+                <?php
+                $stmt_members = $conn->prepare("SELECT * FROM household_members WHERE household_id = :household_id");
+                $stmt_members->bindParam(':household_id', $h['household_id'], PDO::PARAM_INT);
+                $stmt_members->execute();
+                $members = $stmt_members->fetchAll(PDO::FETCH_ASSOC);
+                if ($members) {
+                    foreach ($members as $member) {
+                        ?>
+                        <div class="mb-3 border p-3 rounded">
+                            <p><strong>Name:</strong> <?= htmlspecialchars($member['member_name']) ?></p>
+                            <p><strong>Relation:</strong> <?= htmlspecialchars($member['relation']) ?></p>
+                            <p><strong>Age:</strong> <?= htmlspecialchars($member['age']) ?></p>
+                            <p><strong>Sex:</strong> <?= htmlspecialchars($member['sex']) ?></p>
+                        </div>
+                        <?php
+                    }
+                } else {
+                    ?>
+                    <p>No household members found.</p>
+                    <?php
+                }
+                ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
                             <!-- Edit Household Profile Modal -->
                             <div class="modal fade" id="editHouseholdModal<?= $h['household_id'] ?>" tabindex="-1" aria-labelledby="editHouseholdModalLabel<?= $h['household_id'] ?>" aria-hidden="true">
                                 <div class="modal-dialog" style="max-width: 800px; width: 100%;"> <!-- Custom width for Edit Modal -->
                                     <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="editHouseholdModalLabel<?= $h['household_id'] ?>">Edit Household Profile</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <form method="post">
+                                        <form method="post" action="hh_crud.php">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="editHouseholdModalLabel<?= $h['household_id'] ?>">Edit Household Description</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
                                                 <!-- Household Info -->
+                                                <input type="hidden" name="household_id" value="<?= $h['household_id'] ?>">
                                                 <div class="mb-3">
                                                     <label>Head of Household</label>
                                                     <input type="text" name="head_name" class="form-control" value="<?= htmlspecialchars($h['head_name']) ?>" required>
@@ -318,7 +390,7 @@ $conn = $database->getConnection();
                                                     <input type="text" name="purok" class="form-control" value="<?= htmlspecialchars($h['purok']) ?>" required>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label>Contact Number</label>
+                                                    <label>NIC Number</label>
                                                     <input type="text" name="nic_number" class="form-control" value="<?= htmlspecialchars($h['nic_number']) ?>" required>
                                                 </div>
                                                 <div class="mb-3">
@@ -335,6 +407,71 @@ $conn = $database->getConnection();
                                                     <label>Allergies</label>
                                                     <input type="text" name="allergies" class="form-control" value="<?= htmlspecialchars($h['allergies']) ?>" required>
                                                 </div>
+
+                                                <hr>
+
+                                                <h5>Household Member Details</h5>
+                                                <div id="editHouseholdMembersContainer<?= $h['household_id'] ?>">
+                                                    <?php
+                                                    // Fetch household members for this household
+                                                    $stmt_members = $conn->prepare("SELECT * FROM household_members WHERE household_id = :household_id");
+                                                    $stmt_members->bindParam(':household_id', $h['household_id'], PDO::PARAM_INT);
+                                                    $stmt_members->execute();
+                                                    $members = $stmt_members->fetchAll(PDO::FETCH_ASSOC);
+                                                    if ($members) {
+                                                        foreach ($members as $member) {
+                                                            ?>
+                                                            <div class="household-member mb-3 border p-3 rounded">
+                                                                <label>Member Name:</label>
+                                                                <input type="text" name="member_name[]" class="form-control mb-2" value="<?= htmlspecialchars($member['member_name']) ?>" required>
+
+                                                                <label>Relation to Head:</label>
+                                                                <input type="text" name="relation[]" class="form-control mb-2" value="<?= htmlspecialchars($member['relation']) ?>" required>
+
+                                                                <label>Age:</label>
+                                                                <input type="number" name="age[]" class="form-control mb-2" value="<?= htmlspecialchars($member['age']) ?>" required>
+
+                                                                <label>Sex:</label>
+                                                                <select name="sex[]" class="form-select mb-2" required>
+                                                                    <option value="Male" <?= $member['sex'] === 'Male' ? 'selected' : '' ?>>Male</option>
+                                                                    <option value="Female" <?= $member['sex'] === 'Female' ? 'selected' : '' ?>>Female</option>
+                                                                    <option value="Other" <?= $member['sex'] === 'Other' ? 'selected' : '' ?>>Other</option>
+                                                                </select>
+
+                                                                <button type="button" class="btn btn-danger btn-sm remove-member-btn">Remove</button>
+                                                            </div>
+                                                            <?php
+                                                        }
+                                                    } else {
+                                                        ?>
+                                                        <div class="household-member mb-3 border p-3 rounded">
+                                                            <label>Member Name:</label>
+                                                            <input type="text" name="member_name[]" class="form-control mb-2" required>
+
+                                                            <label>Relation to Head:</label>
+                                                            <input type="text" name="relation[]" class="form-control mb-2" required>
+
+                                                            <label>Age:</label>
+                                                            <input type="number" name="age[]" class="form-control mb-2" required>
+
+                                                            <label>Sex:</label>
+                                                            <select name="sex[]" class="form-select mb-2" required>
+                                                                <option value="Male">Male</option>
+                                                                <option value="Female">Female</option>
+                                                                <option value="Other">Other</option>
+                                                            </select>
+
+                                                            <button type="button" class="btn btn-danger btn-sm remove-member-btn">Remove</button>
+                                                        </div>
+                                                        <?php
+                                                    }
+                                                    ?>
+                                                </div>
+                                                <button type="button" id="addEditMemberBtn<?= $h['household_id'] ?>" class="btn btn-success btn-sm mb-3">
+                                                    <i class="bi bi-plus-circle"></i> Add Member
+                                                </button>
+
+                                                <hr>
 
                                                 <!-- Emergency Contact -->
                                                 <div class="mb-3">
@@ -369,6 +506,36 @@ $conn = $database->getConnection();
                 <?php endif; ?>
             </tbody>
         </table>
+        <?php
+        // Pagination controls
+        $total_pages = ceil($total_households / $records_per_page);
+        if ($total_pages > 1) {
+            echo '<nav aria-label="Page navigation example">';
+            echo '<ul class="pagination justify-content-start">';  // Left aligned pagination
+            // Previous button
+            $prev_page = max(1, $page - 1);
+            $prev_disabled = ($page <= 1) ? ' disabled' : '';
+            echo '<li class="page-item' . $prev_disabled . '">';
+            echo '<a class="page-link" href="?search=' . urlencode($search) . '&page=' . $prev_page . '" tabindex="-1">Previous</a>';
+            echo '</li>';
+
+            // Page numbers
+            for ($i = 1; $i <= $total_pages; $i++) {
+                $active = ($i == $page) ? ' active' : '';
+                echo '<li class="page-item' . $active . '"><a class="page-link" href="?search=' . urlencode($search) . '&page=' . $i . '">' . $i . '</a></li>';
+            }
+
+            // Next button
+            $next_page = min($total_pages, $page + 1);
+            $next_disabled = ($page >= $total_pages) ? ' disabled' : '';
+            echo '<li class="page-item' . $next_disabled . '">';
+            echo '<a class="page-link" href="?search=' . urlencode($search) . '&page=' . $next_page . '">Next</a>';
+            echo '</li>';
+
+            echo '</ul>';
+            echo '</nav>';
+        }
+        ?>
     </div>
 </div>
 
@@ -376,5 +543,6 @@ $conn = $database->getConnection();
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="live.js"></script>
 </body>
 </html>
