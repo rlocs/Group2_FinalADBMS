@@ -1,0 +1,31 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+.about-section {
+    max-width: 800px;
+    margin: 40px auto;
+    background-color: white;
+    padding: 30px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+.about-section h1 {
+    color: #007bff;
+    margin-bottom: 20px;
+}
+
+.about-section h2 {
+    color: #007bff;
+    margin-top: 20px;
+}
+
+.about-section p {
+    line-height: 1.6;
+    font-size: 16px;
+}

@@ -9,11 +9,9 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
 
 $username = $_SESSION['username'];
 $search = $_GET['search'] ?? '';
-
-$interventionSearch = $_GET['intervention_search'] ?? '';
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$recordsPerPage = 5;
-$offset = ($page - 1) * $recordsPerPage;
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$records_per_page = 4;
+$offset = ($page - 1) * $records_per_page;
 
 if (isset($_POST['logout'])) {
     session_destroy();
@@ -22,6 +20,23 @@ if (isset($_POST['logout'])) {
 }
 $database = new Database();
 $conn = $database->getConnection();
+
+if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+    $searchTerm = $_GET['search'] ?? '';
+    $limit = $records_per_page;
+    $offsetAjax = 0; // For live search, we can start from first page or implement pagination later
+
+    $stmt = $conn->prepare("CALL search_patients_paginated(:search_term, :limit, :offset)");
+    $stmt->bindValue(':search_term', $searchTerm);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offsetAjax, PDO::PARAM_INT);
+    $stmt->execute();
+    $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    header('Content-Type: application/json');
+    echo json_encode($patients);
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -477,8 +492,8 @@ function showSection(id) {
 <!-- SweetAlert JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.11/dist/sweetalert2.all.min.js"></script>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
-</html>
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="live.js"></script>
+    </body>
+    </html>

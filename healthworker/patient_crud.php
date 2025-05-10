@@ -1,105 +1,133 @@
 <?php
+require '../dbConnection.php';
 session_start();
-require_once '../dbConnection.php'; // Adjust path if needed
 
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
     header("Location: ../login.php");
     exit;
 }
 
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_account'])) {
-    error_log("Create account POST request received.");
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['update']) && !isset($_POST['delete'])) {
     $name = $_POST['name'];
-    $nic = $_POST['nic'];
-    $email = $_POST['email'];
     $gender = $_POST['gender'];
-    $dob = $_POST['dob'];
     $address = $_POST['address'];
-    $role = $_POST['role'];
-    $username = $_POST['username'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // Securely hash the password
+    $parents = $_POST['parents'];
+    $dob = $_POST['dob'];
+    $weight = $_POST['weight'];
+    $height = $_POST['height'];
+    $blood_type = $_POST['blood_type'];
+    $reason = $_POST['reason'];
+
+    // Validate weight and height
+    if (!is_numeric($weight) || $weight <= 0) {
+        echo "Error: Weight must be a positive number.";
+        exit;
+    }
+    if (!is_numeric($height) || $height <= 0) {
+        echo "Error: Height must be a positive number.";
+        exit;
+    }
 
     try {
         $database = new Database();
         $conn = $database->getConnection();
 
-        // Check if the username already exists
-        $checkSql = "SELECT user_id FROM users WHERE username = :username";
-        $checkStmt = $conn->prepare($checkSql);
-        $checkStmt->bindParam(':username', $username);
-        $checkStmt->execute();
-
-        if ($checkStmt->rowCount() > 0) {
-            $_SESSION['error'] = "Username already taken. Please choose another.";
-            header("Location: profile.php"); // or wherever you need to redirect
-            exit;
-        }
-
-        // Insert new user if username is unique
-        $insertSql = "INSERT INTO users (name, nic, email, gender, dob, address, role, username, password)
-                      VALUES (:name, :nic, :email, :gender, :dob, :address, :role, :username, :password)";
-
-        $stmt = $conn->prepare($insertSql);
+        $sql = "INSERT INTO patients (name, gender, address, parents, dob, weight, height, blood_type, reason) VALUES (:name, :gender, :address, :parents, :dob, :weight, :height, :blood_type, :reason)";
+        $stmt = $conn->prepare($sql);
         $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':nic', $nic);
-        $stmt->bindParam(':email', $email);
         $stmt->bindParam(':gender', $gender);
-        $stmt->bindParam(':dob', $dob);
         $stmt->bindParam(':address', $address);
-        $stmt->bindParam(':role', $role);
-        $stmt->bindParam(':username', $username);
-        $stmt->bindParam(':password', $password);
+        $stmt->bindParam(':parents', $parents);
+        $stmt->bindParam(':dob', $dob);
+        $stmt->bindParam(':weight', $weight);
+        $stmt->bindParam(':height', $height);
+        $stmt->bindParam(':blood_type', $blood_type);
+        $stmt->bindParam(':reason', $reason);
 
         if ($stmt->execute()) {
-            $_SESSION['success'] = "Staff account created successfully.";
-            header("Location: profile.php");
+            header("Location: patient.php");
             exit;
         } else {
-            $_SESSION['error'] = "Failed to create staff account.";
+            echo "Error: Unable to add patient.";
         }
     } catch (PDOException $e) {
-        $_SESSION['error'] = "Database Error: " . $e->getMessage();
+        echo "Error: " . $e->getMessage();
     }
 }
 
-// Handle profile edit
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_profile'])) {
-    $user_id = $_SESSION['user_id'];
-    $name = $_POST['name'];
-    $nic = $_POST['nic'];
-    $email = $_POST['email'];
-    $gender = $_POST['gender'];
-    $dob = $_POST['dob'];
-    $address = $_POST['address'];
+//Delete Patient
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
+    $patient_id = $_POST['delete_id'];
 
     try {
         $database = new Database();
         $conn = $database->getConnection();
 
-        $sql = "CALL update_user_profile(:user_id, :name, :nic, :email, :gender, :dob, :address)";
+        $sql = "DELETE FROM patients WHERE patient_id = :patient_id";
         $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-        $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':nic', $nic);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':gender', $gender);
-        $stmt->bindParam(':dob', $dob);
-        $stmt->bindParam(':address', $address);
+        $stmt->bindParam(':patient_id', $patient_id, PDO::PARAM_INT);
 
         if ($stmt->execute()) {
-            $_SESSION['success'] = "Profile updated successfully.";
-            header("Location: profile.php");
+            header("Location: patient.php");
             exit;
         } else {
-            $_SESSION['error'] = "Failed to update profile.";
-            header("Location: profile.php");
-            exit;
+            echo "Error: Unable to delete patient.";
         }
     } catch (PDOException $e) {
-        $_SESSION['error'] = "Database Error: " . $e->getMessage();
-        header("Location: profile.php");
+        echo "Error: " . $e->getMessage();
+    }
+}
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
+    error_log("Update Patient POST data: " . print_r($_POST, true));
+    $patient_id = $_POST['patient_id'];
+    $name = $_POST['name'];
+    $gender = $_POST['gender'];
+    $address = $_POST['address'];
+    $parents = $_POST['parents'];
+    $dob = $_POST['dob'];
+    $weight = $_POST['weight'];
+    $height = $_POST['height'];
+    $blood_type = $_POST['blood_type'];
+    $reason = $_POST['reason'];
+
+    // Validate weight and height
+    if (!is_numeric($weight) || $weight <= 0) {
+        echo "Error: Weight must be a positive number.";
         exit;
+    }
+    if (!is_numeric($height) || $height <= 0) {
+        echo "Error: Height must be a positive number.";
+        exit;
+    }
+
+    try {
+        $database = new Database();
+        $conn = $database->getConnection();
+
+        $sql = "UPDATE patients SET name = :name, gender = :gender, address = :address, parents = :parents, dob = :dob, weight = :weight, height = :height, blood_type = :blood_type, reason = :reason WHERE patient_id = :patient_id";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':patient_id', $patient_id, PDO::PARAM_INT);
+        $stmt->bindParam(':name', $name);
+        $stmt->bindParam(':gender', $gender);
+        $stmt->bindParam(':address', $address);
+        $stmt->bindParam(':parents', $parents);
+        $stmt->bindParam(':dob', $dob);
+        $stmt->bindParam(':weight', $weight);
+        $stmt->bindParam(':height', $height);
+        $stmt->bindParam(':blood_type', $blood_type);
+        $stmt->bindParam(':reason', $reason);
+
+        if ($stmt->execute()) {
+            header("Location: patient.php");
+            exit;
+        } else {
+            $errorInfo = $stmt->errorInfo();
+            error_log("Update Patient error: " . print_r($errorInfo, true));
+            echo "Error: Unable to update patient.";
+        }
+    } catch (PDOException $e) {
+        error_log("PDOException in Update Patient: " . $e->getMessage());
+        echo "Error: " . $e->getMessage();
     }
 }
 ?>

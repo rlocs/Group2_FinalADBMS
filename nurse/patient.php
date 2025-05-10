@@ -26,12 +26,20 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $limit = $records_per_page;
     $offsetAjax = 0; // For live search, we can start from first page or implement pagination later
 
-    $stmt = $conn->prepare("CALL search_patients_paginated(:search_term, :limit, :offset)");
-    $stmt->bindValue(':search_term', $searchTerm);
-    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offsetAjax, PDO::PARAM_INT);
-    $stmt->execute();
-    $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($searchTerm) {
+        $stmt = $conn->prepare("SELECT * FROM patients WHERE name LIKE CONCAT('%', :search_term, '%') ORDER BY patient_id ASC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':search_term', $searchTerm);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offsetAjax, PDO::PARAM_INT);
+        $stmt->execute();
+        $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $stmt = $conn->prepare("SELECT * FROM patients ORDER BY patient_id ASC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offsetAjax, PDO::PARAM_INT);
+        $stmt->execute();
+        $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     header('Content-Type: application/json');
     echo json_encode($patients);
@@ -130,11 +138,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             -->
 
             <!-- Search Form -->
-            <form method="get" class="d-flex" style="max-width: 350px;">
+            <form id="searchForm" method="get" class="d-flex" style="max-width: 350px;">
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                     <input type="text" id="searchPatient" name="search" class="form-control" placeholder="Search by Name" value="<?= htmlspecialchars($search) ?>">
-                    <button type="submit" class="btn btn-search">Search</button>
+                    <button type="button" id="searchButton" class="btn btn-search">Search</button>
                 </div>
             </form>
         </div>

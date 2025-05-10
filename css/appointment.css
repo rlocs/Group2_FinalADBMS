@@ -228,7 +228,29 @@ body {
     background-color: #ffffff;
     border-color: #ffffff;
 }
-
+        /* Custom pagination styles for black and white */
+        .pagination {
+            background-color: white;
+        }
+        .pagination .page-link {
+            color: black;
+            background-color: white;
+            border: 1px solid black;
+        }
+        .pagination .page-link:hover {
+            background-color: black;
+            color: white;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: black;
+            color: white;
+            border-color: black;
+        }
+        .pagination .page-item.disabled .page-link {
+            color: gray;
+            background-color: white;
+            border-color: black;
+        }
 
 @media (max-width: 768px) {
     .modal-dialog {

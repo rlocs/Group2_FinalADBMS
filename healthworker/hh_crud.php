@@ -2,12 +2,6 @@
 require '../dbConnection.php';
 session_start();
 
-// Ensure the user is a Healthworker
-if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
-    header("Location: ../login.php");
-    exit;
-}
-
 // Handle form submission to add a new Household Profile, Medical Information, and Emergency Contact
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_household'])) {
     // Household Details
