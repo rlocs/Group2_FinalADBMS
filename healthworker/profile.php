@@ -1,5 +1,4 @@
 <?php
-include 'dbConnection.php'; // adjust path as needed
 session_start();
 if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Healthworker') {
     header("Location: ../login.php");
@@ -91,6 +90,7 @@ $email = $username . "@gmail.com"; // Dummy email
 </div>
 
 
+
 <!-- Modal for Creating New Staff Account -->
 <div class="modal fade" id="createAccountModal" tabindex="-1" aria-labelledby="createAccountModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -133,8 +133,6 @@ $email = $username . "@gmail.com"; // Dummy email
     </form>
   </div>
 </div>
-
-
 
 
 
