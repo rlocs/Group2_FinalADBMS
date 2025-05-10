@@ -20,8 +20,8 @@ SET time_zone = "+00:00";
 --
 -- Database: `renew_healthcenter`
 --
-CREATE DATABASE IF NOT EXISTS `renew_healthcenter`;
-USE `renew_healthcenter`;
+CREATE DATABASE IF NOT EXISTS `db_healthcenter`;
+USE `db_healthcenter`;
 
 DELIMITER $$
 --

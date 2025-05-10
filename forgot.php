@@ -1,69 +1,31 @@
+<?php
+session_start();
+?>
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Reset your password securely through our health center system. Enter your email to receive password recovery instructions.">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Forgot Password</title>
-
-    <!-- Boxicons for icons -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
             background-color: #f9f9f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
         .container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0;
-            padding: 0;
-        }
-
-        .square {
             width: 400px;
-            height: 400px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid #ccc;
-            background-color: rgb(203, 202, 209);
-            box-shadow: 0 6px 8px rgba(22, 22, 22, 0.1);
+            padding: 30px;
+            background: rgb(203, 202, 209);
             border-radius: 15px;
-            flex-direction: column;
-            padding: 27.9px;
+            box-shadow: 0 6px 8px rgba(22, 22, 22, 0.1);
         }
-
-        .square img {
-            width: 116%;
-            height: auto;
-            border-radius: 10px;
-        }
-
-        .form-group {
-            position: relative;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-
         .form-group i {
             position: absolute;
             top: 50%;
@@ -71,12 +33,10 @@
             transform: translateY(-50%);
             color: #444;
         }
-
         .form-control {
             padding-left: 35px;
         }
-
-        .btn-login {
+        .btn-submit {
             width: 100%;
             background-color: rgb(37, 52, 79);
             color: white;
@@ -86,33 +46,28 @@
             border-radius: 10px;
             transition: all 0.3s ease;
         }
-
-        .btn-login:hover {
+        .btn-submit:hover {
             background-color: rgb(25, 54, 243);
             transform: scale(1.02);
         }
-
-        .login-title {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        .title {
             font-size: 28px;
             font-weight: bold;
             margin-bottom: 20px;
             color: #25344f;
+            text-align: center;
         }
-
         .forgot-password {
             text-align: right;
             width: 100%;
             margin-top: -10px;
             margin-bottom: 15px;
         }
-
         .forgot-password a {
             font-size: 14px;
             color: #0040aa;
             text-decoration: none;
         }
-
         .forgot-password a:hover {
             text-decoration: underline;
         }
@@ -121,32 +76,29 @@
 
 <body>
     <div class="container">
-        <div class="square">
-            <img src="sanpedro.png" alt="Health Center Logo">
-        </div>
-        <div class="square">
-            <div class="login-title">Forgot Password</div>
-            <form action="b-login.php" method="POST">
-                <div class="form-group">
-                    <i class='bx bxs-user'></i>
-                    <input type="text" class="form-control" name="username" id="username" placeholder="E-mail Address" required>
-                </div>
-                <div class="form-group">
-                    <i class='bx bxs-lock-alt'></i>
-                    <input type="password" class="form-control" name="password" id="password" 
-                    minlength = "8" maxlength="16" placeholder = "Create Password" required>
-                </div>
-                <div class="form-group">
-                    <i class='bx bxs-lock-alt'></i>
-                    <input type="password" class="form-control" name="confirm_password" id="confirm password" 
-                    minlength = "8" maxlength="16" placeholder="Confirm Password" required>
-                </div>
-                <div class="forgot-password">
-                    <a href="login.php">Back to Login</a>
-                </div>
-                <button type="submit" class="btn-login">Confirm</button>
-            </form>
-        </div>
+        <div class="title">Forgot Password</div>
+        <form action="b-login.php" method="POST">
+            <div class="form-group" style="position: relative; margin-bottom: 20px;">
+                <i class='bx bxs-user'></i>
+                <input type="text" class="form-control" name="username" placeholder="Username" required />
+            </div>
+            <div class="form-group" style="position: relative; margin-bottom: 20px;">
+                <i class='bx bxs-calendar'></i>
+                <input type="date" class="form-control" name="dob" placeholder="Date of Birth" required />
+            </div>
+            <div class="form-group" style="position: relative; margin-bottom: 20px;">
+                <i class='bx bxs-lock-alt'></i>
+                <input type="password" class="form-control" name="password" placeholder="New Password" minlength="8" maxlength="16" required />
+            </div>
+            <div class="form-group" style="position: relative; margin-bottom: 20px;">
+                <i class='bx bxs-lock-alt'></i>
+                <input type="password" class="form-control" name="confirm_password" placeholder="Confirm New Password" minlength="8" maxlength="16" required />
+            </div>
+            <div class="forgot-password">
+                <a href="login.php">Back to Login</a>
+            </div>
+            <button type="submit" class="btn-submit">Reset Password</button>
+        </form>
     </div>
 </body>
 
