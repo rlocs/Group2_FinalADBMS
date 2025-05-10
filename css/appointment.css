@@ -1,0 +1,270 @@
+
+body {
+    background-color: #ffffff;
+}
+.navbar-custom {
+    background-color: #ffffff;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+.navbar-nav .nav-link {
+    color: black !important;
+    font-size: 1.3rem !important;
+    font-weight: bold;
+    margin-top: 10px;
+    position: relative;
+    padding-bottom: 5px;
+    text-decoration: none;
+}
+.navbar-nav .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    background-color: #003165; /* Blue for visibility */
+    border-radius: 2px;
+}
+.user-info {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 30px;
+    padding: 10px 20px;
+    background-color: #f9f9f9; /* optional: light background for top bar */
+    border-bottom: 1px solid #ddd; /* optional */
+}
+.user-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.user-info div {
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+.user-info .label {
+    font-size: 13px;
+    color: #777;
+    margin: 0;
+    text-align: right;
+}
+
+.user-info .value {
+    font-size: 15px;
+    margin: 0;
+    text-align: right;
+    font-weight: bold;
+}
+
+.user-name a {
+    text-decoration: none;
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 600;
+}
+.logout-btn {
+    background-color: #000000;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.logout-btn:hover {
+    background-color:rgb(14, 13, 13);
+}
+.content-section {
+    padding: 30px;
+}
+.input-group .form-control {
+    min-width: 150px;
+}
+.top-gap-after-navbar {
+    margin-top: 30px; /* Adjust spacing as needed */
+}
+/* Container styling for consistency */
+.container {
+    max-width: 100%;
+    padding: 20px;
+}
+/* Custom Search Button Styling */
+.btn-search {
+    background-color: #000000; /* Bootstrap green or change as needed */
+    color: white;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+.btn-search:hover {
+    background-color: #000000; /* Slightly darker green */
+    color: white;
+}
+/* Reduce space below buttons and forms */
+.d-flex.mb-2 {
+    margin-bottom: 5px !important;
+}
+.table-responsive {
+    max-height: 500px; /* You can increase or decrease this */
+    max-width: 1600px;
+    margin-left:30px;
+    overflow-y: auto;
+}
+
+/* Make sure tables use same full width and align */
+.table-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .1px; /* space between the tables */
+}
+/* Custom Button Colors */
+.btn-custom-add {
+    background-color:rgb(0, 0, 0); /* Green */
+    color: white;
+}
+
+.btn-custom-edit {
+    background-color:rgb(0, 0, 0); /* Yellow/Orange */
+    color: white;
+}
+
+.btn-custom-delete {
+    background-color:rgb(157, 0, 0); /* Red */
+    color: white;
+}
+
+.btn-custom-view {
+    background-color:rgb(0, 0, 0); /* Bootstrap primary color or choose your own */
+    color: white;
+    border: none;
+}
+
+
+.btn-custom-add:hover,
+.btn-custom-edit:hover,
+.btn-custom-delete:hover,
+.btn-custom-view:hover {
+    background-color: #f8f9fa;
+    color: black;
+}
+
+.appointment-heading{
+    text-align: left; 
+    margin-top: 1px; 
+    font-size: 1.8rem; 
+    margin-left: 26px;
+}
+
+/* Customize Modal Background */
+.modal-content {
+    background-color: #fff;
+    margin: 80px auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+/* Customize Modal Header */
+.modal-header {
+    background-color: #ffffff; /* Green header background */
+    color: rgb(0, 0, 0); /* White text in the header */
+}
+/* Customize Modal Title */
+.modal-title {
+    font-size: 1.2rem; /* Adjust title size */
+    color: rgb(0, 0, 0); /* White text for title */
+    font-weight: bold;
+}
+
+/* Customize Modal Body */
+.modal-body {
+    background-color: #ffffff; /* White background for body */
+    color: #000000; /* Dark text color */
+}
+
+/* Customize Modal Footer */
+.modal-footer {
+    background-color: #ffffff; /* Light gray footer */
+    border-top: 1px solid #ffffff;
+    margin-right: 10px;
+}
+
+/* Customize Submit Button */
+.btn-successs {
+    background-color: #000000; 
+    border-color: #ffffff; 
+}
+
+.btn-successs:hover {
+    background-color:rgb(0, 0, 0); 
+    color: white;
+}
+
+
+/* Customize Cancel Button */
+.btn-secondary {
+    background-color: #000000; /* Gray color for cancel button */
+    border-color: #ffffff;
+}
+
+.btn-secondary:hover {
+    background-color: #000000; /* Darker gray on hover */
+}
+
+/* Customize Buttons inside Modal */
+.btn-custom-add {
+    background-color: #000000;
+    color: white;
+    border-color: #000000;
+}
+
+.btn-custom-add:hover {
+    background-color: #ffffff;
+    border-color: #ffffff;
+}
+        /* Custom pagination styles for black and white */
+        .pagination {
+            background-color: white;
+        }
+        .pagination .page-link {
+            color: black;
+            background-color: white;
+            border: 1px solid black;
+        }
+        .pagination .page-link:hover {
+            background-color: black;
+            color: white;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: black;
+            color: white;
+            border-color: black;
+        }
+        .pagination .page-item.disabled .page-link {
+            color: gray;
+            background-color: white;
+            border-color: black;
+        }
+
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 1rem auto;
+        width: 90%;
+    }
+    .user-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .user-info img {
+        margin-bottom: 10px;
+    }
+    .navbar-nav .nav-link {
+        font-size: 1rem;
+    }
+}
